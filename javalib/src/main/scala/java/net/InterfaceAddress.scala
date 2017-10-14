@@ -2,8 +2,7 @@ package java.net
 
 class InterfaceAddress(private val addr : InetAddress, prefixLength : Short) extends Object {
   private val mask : InetAddress = calSubnetMask()
-  // TODO : fix this
-  private var cacheBroadcast : InetAddress = null //new InetAddress(null)
+  private var cacheBroadcast : InetAddress = new InetAddress(null)
 
   private def calSubnetMask() : InetAddress = addr match {
     case address : Inet4Address => {
@@ -62,9 +61,8 @@ class InterfaceAddress(private val addr : InetAddress, prefixLength : Short) ext
         if (prefixLength > 0) {
           val maskBytes = mask.getAddress()
           val addrBytes = addr.getAddress()
-          // TODO : fix this
-          //cacheBroadcast = new InetAddress(addrBytes.zip(maskBytes).map(
-          //  tuple => (tuple._1 | ~tuple._2).toByte))
+          cacheBroadcast = new InetAddress(addrBytes.zip(maskBytes).map(
+            tuple => (tuple._1 | ~tuple._2).toByte))
         }
       }
       cacheBroadcast
