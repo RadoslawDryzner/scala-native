@@ -1,5 +1,7 @@
 package java.net
 
+import java.util.concurrent.locks.Lock
+
 class DatagramSocket private (
     private[net] var impl : DatagramSocketImpl,
     private[net] var address : InetAddress){
@@ -27,7 +29,6 @@ class DatagramSocket private (
     if (aPort < 0 || aPort > 65535) {
       throw new IllegalArgumentException(s"Port out of range: $aPort")
     }
-    // TODO : Security Manager
   }
 
   def close() : Unit = {
@@ -49,8 +50,6 @@ class DatagramSocket private (
     } catch {
       case e : SocketException => // Ignored
     }
-
-    // TODO : Security Manager
 
     try {
       impl.connect(anAddress, aPort)
@@ -74,8 +73,7 @@ class DatagramSocket private (
     connected = false
   }
 
-  // TODO : should be syncrhonised ??
-  private[net] def createSocket(aPort : Int, addr : InetAddress) : Unit = {
+  private[net] def createSocket(aPort : Int, addr : InetAddress) : Unit = synchronized {
     impl = new PlainDatagramSocketImpl()
     impl.create()
 
@@ -100,7 +98,6 @@ class DatagramSocket private (
       return InetAddress.ANY
     }
 
-    // TODO: Security manager stuff
     impl.getLocalAddress()
   }
 
@@ -120,26 +117,22 @@ class DatagramSocket private (
 
   private[net] def isMulticastSocket() : Boolean = false
 
-  // TODO : synchronised ??
-  def getReceiveBufferSize() : Int = {
+  def getReceiveBufferSize() : Int = synchronized {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.SO_RCVBUF).asInstanceOf[Int]
   }
 
-  // TODO : synchronised ??
-  def  getSendBufferSize() : Int = {
+  def  getSendBufferSize() : Int = synchronized {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.SO_SNDBUF).asInstanceOf[Int]
   }
 
-  // TODO : synchronised ??
-  def getSoTimeout() : Int = {
+  def getSoTimeout() : Int = synchronized {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.SO_TIMEOUT).asInstanceOf[Int]
   }
 
-  // TODO : synchronised ??
-  def receive(pack : DatagramPacket) : Unit = {
+  def receive(pack : DatagramPacket) : Unit = synchronized {
     checkClosedAndBind(true)
 
     var senderAddr : InetAddress = null;
@@ -148,7 +141,6 @@ class DatagramSocket private (
 
     var copy = false
 
-    // TODO : Security
     if (address != null) {
       if (pack == null) {
         throw new NullPointerException()
@@ -178,7 +170,6 @@ class DatagramSocket private (
         }
 
         if (address == null) {
-          // TODO : security
           loop = false
         } else if (port == senderPort && address == senderAddr) {
           loop = false
@@ -217,15 +208,12 @@ class DatagramSocket private (
       if (packAddr == null) {
         throw new NullPointerException("Destination address is null")
       }
-
-      // TODO: security
     }
 
     impl.send(pack)
   }
 
-  // TODO : Syncrhonised ??
-  def setSendBufferSize(size : Int) : Unit = {
+  def setSendBufferSize(size : Int) : Unit = synchronized {
     if (size < 1) {
       throw new IllegalArgumentException("Zero or negative buffer size")
     }
@@ -234,8 +222,7 @@ class DatagramSocket private (
     impl.setOption(SocketOptions.SO_SNDBUF, Int.box(size))
   }
 
-  // TODO : syncrhonised
-  def setReceiveBufferSize(size : Int) : Unit = {
+  def setReceiveBufferSize(size : Int) : Unit = synchronized {
     if (size < 1) {
       throw new IllegalArgumentException("Zero or negative buffer size")
     }
@@ -327,10 +314,8 @@ class DatagramSocket private (
       throw new SocketException(s"Host is unresolved\: $hostName")
     }
 
-    // TODO : synchronised
+    // TODO : synchronised also in another connect ?
     checkClosedAndBind(true)
-
-    // TODO : security
 
     try {
       impl.connect(inetAddr.getAddress, inetAddr.getPort)
@@ -390,7 +375,7 @@ class DatagramSocket private (
   
   def isClosed() : Boolean = closed
 
-  // TODO : Datagram Channel
+  // Datagram Channel not yet implemented but this returs null anyway
   def getChannel() = null
 
 }
