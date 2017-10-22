@@ -9,6 +9,8 @@ object _if {
   type ifconf = CStruct2[CInt,
                          Ptr[Byte]]
 
+  def if_nametoindex(ifname : CString) : UInt = extern
+
   @name("scalanative_IFF_RUNNING")
   def IFF_RUNNING: CInt = extern
 
