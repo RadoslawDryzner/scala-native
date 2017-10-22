@@ -27,9 +27,9 @@ final class Inet6Address private[net] (ipAddress: Array[Byte],
 
   // TODO: these fields
   @transient
-  private[net] var scopedIf : NetworkInterface= ???
-  private[net] var ifname : String= ???
-  private[net] var scope_ifname_set : Boolean = ???
+  private[net] var scopedIf : NetworkInterface= null
+  private[net] var ifname : String= null
+  private[net] var scope_ifname_set : Boolean = false
 
   override def isMCGlobal(): Boolean =
     (ipAddress(0) == -1) && (ipAddress(1) & 15) == 14
