@@ -70,5 +70,5 @@ class InterfaceAddress(private val addr : InetAddress, prefixLength : Short) ext
     case _ => null
   }
 
-  def getNetworkPrefixLength() : Int = prefixLength
+  def getNetworkPrefixLength() : Short = prefixLength
 }
