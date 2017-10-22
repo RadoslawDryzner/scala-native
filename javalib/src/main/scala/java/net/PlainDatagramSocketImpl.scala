@@ -76,6 +76,14 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
+  protected[net] def getTTL() : Byte = {
+    val result : Byte = Byte.box(getOption(IP_MULTICAST_TTL).asInstanceOf[Byte])
+    if (/* TODO : platform stuff */ MULTICAST_TTL != 0) {
+      return ttl.toByte
+    }
+    return result
+  }
+
   def getTimeToLive() : Int = {
     if (/* TODO : platform stuff */ MULTICAST_TTL != 0)
       ttl
@@ -185,7 +193,12 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  // TODO : deprecated setTTL
+  protected[net] def setTTL(ttl : Byte) : Unit = {
+    setOption(IP_MULTICAST_TTL, Byte.box(ttl))
+    if (MULTICAST_TTL != 0) { // TODO : Platform stuff
+      this.ttl = ttl
+    }
+  }
 
   override def connect(inetAddr : InetAddress, port : Int) : Unit = {
     // TODO : platform stuff
