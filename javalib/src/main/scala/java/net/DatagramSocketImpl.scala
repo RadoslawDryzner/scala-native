@@ -19,7 +19,8 @@ abstract class DatagramSocketImpl extends SocketOptions {
 
   protected[net] def getLocalPort() : Int = localPort
 
-  // TODO : Include deprecated method ?
+  @deprecated
+  protected[net] def getTTL() : Byte
 
   protected[net] def getTimeToLive() : Int
 
@@ -39,7 +40,8 @@ abstract class DatagramSocketImpl extends SocketOptions {
 
   protected[net] def setTimeToLive(ttl : Int) : Unit
 
-  // TODO: Deprecated ??
+  @deprecated
+  protected[net] def setTTL(ttl : Byte) : Unit
 
   protected[net] def connect(inetAddr : InetAddress, port : Int) : Unit = { /* Do nothing */ }
 
