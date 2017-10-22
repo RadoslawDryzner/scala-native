@@ -22,7 +22,7 @@ class InterfaceAddress(private val addr : InetAddress, prefixLength : Short) ext
       if (equals && (anotherInterAddr.getNetworkPrefixLength() == prefixLength)) {
         val broadcast = if (cacheBroadcast.ipAddress == null) getBroadcast() else cacheBroadcast
         val anotherbr = anotherInterAddr.getBroadcast()
-        equals = if (broadcast == null) anotherInterAddr == null else broadcast == anotherbr
+        equals = if (broadcast == null) anotherbr == null else broadcast == anotherbr
       }
       equals
     }
