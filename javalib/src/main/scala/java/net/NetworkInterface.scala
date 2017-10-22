@@ -107,7 +107,9 @@ final class NetworkInterface private (
     val ptr = stackalloc[Ptr[ifaddrs]]
     val ret = ifaddrs.getifaddrs(ptr)
     val first : Ptr[ifaddrs] = !ptr
-    getInterfaceAddressesImpl(first, List()).asJava
+    val toReturn = getInterfaceAddressesImpl(first, List()).asJava
+    freeifaddrs(first)
+    toReturn
   }
 
   private def getInterfaceAddressesImpl(netif : Ptr[ifaddrs.ifaddrs], 
@@ -229,10 +231,17 @@ final class NetworkInterface private (
             throw new SocketException("Could not retrieve information about socket.")
           }
           // get array
+          var allZero = true
           for(j <- 0 until macAddrSize) {
             toReturn(j) = !((((ifname + ifnameSize).cast[Ptr[sockaddr]])._2)._1 + j)
+            if (toReturn(j) != 0) {
+              allZero = false
+            }
           }
           close(fd)
+          if (allZero) {
+            return null
+          }
           return toReturn
         }
       }
@@ -321,7 +330,9 @@ object NetworkInterface {
     val ptr = stackalloc[Ptr[ifaddrs]]
     val ret = ifaddrs.getifaddrs(ptr)
     val first : Ptr[ifaddrs] = !ptr
-    traverseInterfaces(first, ArrayBuffer.empty[NetworkInterface])
+    val toReturn = traverseInterfaces(first, ArrayBuffer.empty[NetworkInterface])
+    freeifaddrs(first)
+    toReturn
   }
 
   private def traverseInterfaces(netif : Ptr[ifaddrs], acc : ArrayBuffer[NetworkInterface]) : Array[NetworkInterface] = {
@@ -405,8 +416,6 @@ object NetworkInterface {
     if (interfaces == null) {
       null
     } else {
-      val peeked = Array.fill[Boolean](interfaces.size)(false)
-
       interfaces.foreach(netif => netif.addresses.foreach(addr => {
         if (addr.isLinkLocalAddress() || addr.isSiteLocalAddress()) {
           addr.asInstanceOf[Inet6Address].scopedIf = netif
@@ -414,8 +423,6 @@ object NetworkInterface {
           addr.asInstanceOf[Inet6Address].scope_ifname_set = true
         }
       }))
-
-      val hlist = List[NetworkInterface]()
 
       val netifMap = interfaces.map(netif => (netif.getName(), netif)).toMap
       interfaces.foreach(netif => netif.getName().split(":") match {
@@ -427,7 +434,7 @@ object NetworkInterface {
         case _ => // Do nothing
       })
 
-      hlist.iterator.asJavaEnumeration
+      interfaces.iterator.asJavaEnumeration
     }
   }
 }
