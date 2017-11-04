@@ -1,6 +1,9 @@
 package java.net
 
 import java.io.FileDescriptor
+import scala.scalanative.native._
+import scala.scalanative.posix.sys.socket
+import scala.scalanative.posix.netinet.in
 
 abstract class DatagramSocketImpl extends SocketOptions {
   protected[net] var fd : FileDescriptor = null
@@ -14,8 +17,32 @@ abstract class DatagramSocketImpl extends SocketOptions {
 
   protected[net] def getFileDescriptor() : FileDescriptor = fd
 
-  // TODO : Apache harmony platform
-  private[net] def getLocalAddress() : InetAddress = ???
+  private[net] def getLocalAddress() : InetAddress = {
+    val len = stackalloc[socket.socklen_t]
+    !len = sizeof[in.sockaddr_in6].toUInt
+    val sin = stackalloc[socket.sockaddr]
+    if (socket.getsockname(fd.fd, sin, len) != 0) {
+      return null
+    }
+
+    if (!sin._1 != socket.AF_INET.toUShort) {
+      val addr4 = sin.cast[Ptr[in.sockaddr_in]]
+      val addr4in = !(addr4._3)._1
+      val addrBytes = Array.fill[Byte](4)(0)
+      for (i <- 3 to 0 by -1) {
+        addrBytes(i) = (addr4in.toByte / math.pow(2, i * 8)).toByte
+      }
+      new Inet4Address(addrBytes)
+    } else {
+      val addr6 = sin.cast[Ptr[Byte]]
+      val addr6in : Ptr[in.in6_addr] = ((addr6 + 8)).cast[Ptr[in.in6_addr]]
+      val addrBytes = Array.fill[Byte](16)(0)
+      for (i <- 0 until 16) {
+        addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
+      }
+      new Inet6Address(addrBytes)
+    }
+  }
 
   protected[net] def getLocalPort() : Int = localPort
 
