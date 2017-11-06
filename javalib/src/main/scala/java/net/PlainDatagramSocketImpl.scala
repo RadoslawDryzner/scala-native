@@ -209,7 +209,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       if (peek) {
         flags = socket.MSG_PEEK
       }
-      val res = socket.recv(fd.fd, message, localCount, flags)
+      val res = socket.recv(fd.fd, message, localCount, flags).toInt
 
       if (res < 0 || errno.errno == ECONNREFUSED) {
         throw new PortUnreachableException(fromCString(string.strerror(errno.errno)))
@@ -244,7 +244,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       if (peek) {
         flags = socket.MSG_PEEK
       }
-      val result = socket.recvfrom(fd.fd, message, 1, flags, sin, len)
+      val result = socket.recvfrom(fd.fd, message, 1, flags, sin, len).toInt
 
       pack.port = if (!sin._1 != socket.AF_INET.toUShort) {
         val addr4 = sin.cast[Ptr[in.sockaddr_in]]
@@ -297,7 +297,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
           throw new SocketException("Bad Socket.")
         }
         selectRead(fd, receiveTimeout)
-        val result = socket.recvfrom(fd.fd, message, 1, socket.MSG_PEEK, sin, len)
+        val result = socket.recvfrom(fd.fd, message, 1, socket.MSG_PEEK, sin, len).toInt
 
         if (result < 0) {
           throw new SocketException(fromCString(string.strerror(errno.errno)))
@@ -345,7 +345,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
         throw new InterruptedIOException("The call was cancelled.")
       }
     }
-    val result = socket.send(fd.fd, (msg + sent), length, flags)
+    val result = socket.send(fd.fd, (msg + sent), length, flags).toInt
     if (result < 0) {
       0
     } else {
@@ -360,14 +360,14 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
 
   private def sendMsg(fd : FileDescriptor, msg : Ptr[Byte], sent : Int, length : Int, flags: Int,
                       destAddr : Ptr[socket.sockaddr], addrlen : socket.socklen_t) : Int = {
-    val result = socket.sendto(fd.fd, (msg + sent), length, flags, destAddr, addrlen)
+    val result = socket.sendto(fd.fd, (msg + sent), length, flags, destAddr, addrlen).toInt
     if (result < 0) {
       0
     } else {
       val newLength = length - result.toInt
       val newSent = sent + result.toInt
       if (newLength > 0)
-        sendMsg(fd, msg, newSent, newLength, flags, destAddr, addrlen)
+        sendMsg(fd, msg, newSent, newLength, flags, destAddr, addrlen).toInt
       else
         newSent
     }
