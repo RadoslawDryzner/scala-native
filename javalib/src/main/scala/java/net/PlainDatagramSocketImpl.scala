@@ -244,7 +244,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       if (peek) {
         flags = socket.MSG_PEEK
       }
-      val result = socket.recvfrom(fd.fd, message, 1, flags, sin, len).toInt
+      val result = socket.recvfrom(fd.fd, message, localCount, flags, sin, len).toInt
 
       pack.port = if (!sin._1 != socket.AF_INET.toUShort) {
         val addr4 = sin.cast[Ptr[in.sockaddr_in]]
