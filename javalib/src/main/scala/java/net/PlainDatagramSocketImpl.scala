@@ -373,35 +373,33 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  def getSockAddr(address : InetAddress, port: Int) : Ptr[socket.sockaddr] = Zone {implicit z => 
-    address match {
-      case in4 : Inet4Address => {
-        val in4addr = alloc[in.sockaddr_in]
-        !in4addr._1 = socket.AF_INET.toUShort
-        !in4addr._2 = inet.htons(port.toUShort)
-        val in4addr_b = alloc[in.in_addr]
-        !in4addr_b._1 = 0.toUInt
-        for (i <- 0 until 3) {
-          !in4addr_b._1 = !in4addr_b._1 | (in4.ipAddress(i) << ((3 - i) * 8)).toUInt
-        }
-        !in4addr._3 = !in4addr_b
-        in4addr.cast[Ptr[socket.sockaddr]]
+  def getSockAddr(address : InetAddress, port: Int) : Ptr[socket.sockaddr] = address match {
+    case in4 : Inet4Address => {
+      val in4addr = stdlib.malloc(sizeof[in.sockaddr_in]).cast[Ptr[in.sockaddr_in]]
+      !in4addr._1 = socket.AF_INET.toUShort
+      !in4addr._2 = inet.htons(port.toUShort)
+      val in4addr_b = stdlib.malloc(sizeof[in.in_addr]).cast[Ptr[in.in_addr]]
+      !in4addr_b._1 = 0.toUInt
+      for (i <- 0 until 4) {
+        !in4addr_b._1 = !in4addr_b._1 | (in4.ipAddress(i).toUByte << (i * 8))
       }
-      case in6 : Inet6Address => {
-        val in6addr = alloc[Byte](sizeof[in.sockaddr_in6])
-        !(in6addr.cast[Ptr[UShort]]) = socket.AF_INET6.toUShort
-        !((in6addr + 2).cast[Ptr[UShort]]) = inet.htons(port.toUShort)
-        !((in6addr + 4).cast[Ptr[UInt]]) = ((trafficClass & 0xFF) << 20).toUShort
-        val in6addr_b = alloc[in.in6_addr]
-        val in6addr_a = alloc[CArray[UByte, in._16]]
-        for (i <- 0 until 16) {
-          !(in6addr_a._1 + i) = in6.ipAddress(i).toUByte
-        }
-        !in6addr_b._1 = !(in6addr_a)
-        !((in6addr + 8).cast[Ptr[in.in6_addr]]) = !in6addr_b
-        !((in6addr + 24).cast[Ptr[UInt]]) = 0.toUInt
-        in6addr.cast[Ptr[socket.sockaddr]]
+      !in4addr._3 = !in4addr_b
+      in4addr.cast[Ptr[socket.sockaddr]]
+    }
+    case in6 : Inet6Address => {
+      val in6addr = stackalloc[Byte](sizeof[in.sockaddr_in6])
+      !(in6addr.cast[Ptr[UShort]]) = socket.AF_INET6.toUShort
+      !((in6addr + 2).cast[Ptr[UShort]]) = inet.htons(port.toUShort)
+      !((in6addr + 4).cast[Ptr[UInt]]) = ((trafficClass & 0xFF) << 20).toUShort
+      val in6addr_b = stackalloc[in.in6_addr]
+      val in6addr_a = stackalloc[CArray[UByte, in._16]]
+      for (i <- 0 until 16) {
+        !(in6addr_a._1 + i) = in6.ipAddress(i).toUByte
       }
+      !in6addr_b._1 = !(in6addr_a)
+      !((in6addr + 8).cast[Ptr[in.in6_addr]]) = !in6addr_b
+      !((in6addr + 24).cast[Ptr[UInt]]) = 0.toUInt
+      in6addr.cast[Ptr[socket.sockaddr]]
     }
   }
 
