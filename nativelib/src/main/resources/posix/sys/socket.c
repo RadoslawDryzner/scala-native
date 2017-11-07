@@ -192,7 +192,7 @@ int scalanative_recv(int socket, void *buffer, size_t length, int flags) {
     return recv(socket, buffer, length, flags);
 }
 
-int scalantive_recvfrom(int socket, void *buffer, size_t length, int flags, 
+int scalanative_recvfrom(int socket, void *buffer, size_t length, int flags, 
                         struct scalanative_sockaddr *address, 
                         socklen_t *address_len) {
     struct sockaddr *converted_address;
