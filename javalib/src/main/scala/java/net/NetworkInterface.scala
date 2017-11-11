@@ -11,6 +11,7 @@ import scalanative.posix.sys.socketOps._
 import scalanative.posix.sys.ioctl._
 import scalanative.posix.unistd._
 import scalanative.native.ifaddrs._
+import scalanative.native.ifaddrsOps.ifaddrsOps
 import scalanative.posix.netinet.in._
 import scalanative.posix.netinet.inOps._
 
@@ -117,9 +118,9 @@ final class NetworkInterface private (
   private def getInterfaceAddressesImpl(netif : Ptr[ifaddrs.ifaddrs], 
                                         acc : List[InterfaceAddress]) : List[InterfaceAddress] = {
     if (netif != null) {
-      val netifName = fromCString(!netif._2)
-      if (netifName == name && !netif._4 != null) {
-        val addr : Ptr[sockaddr] = !netif._4
+      val netifName = fromCString(netif.ifa_name)
+      if (netifName == name && netif.ifa_addr != null) {
+        val addr : Ptr[sockaddr] = netif.ifa_addr
         if (addr.sa_family == AF_INET.toUInt) {
           val addr4 = addr.cast[Ptr[sockaddr_in]]
           val addr4in = addr4.sin_addr.in_addr
@@ -127,12 +128,12 @@ final class NetworkInterface private (
           for (i <- 3 to 0 by -1) {
             addrBytes(i) = (addr4in >> i * 8).toByte
           }
-          val mask = !netif._5
+          val mask = netif.ifa_netmask
           val mask4 = mask.cast[Ptr[sockaddr_in]]
           val mask4in = mask4.sin_addr.in_addr
           val prefixLength = mask4in.toBinaryString.groupBy(identity).mapValues(_.size)('1')
           
-          getInterfaceAddressesImpl((!netif._1).cast[Ptr[ifaddrs.ifaddrs]], 
+          getInterfaceAddressesImpl((netif.ifa_next).cast[Ptr[ifaddrs.ifaddrs]], 
                                     new InterfaceAddress(
                                       new Inet4Address(addrBytes), 
                                       prefixLength.toShort) :: acc)
@@ -143,7 +144,7 @@ final class NetworkInterface private (
           for (i <- 0 until 16) {
             addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
           }
-          val mask = !netif._5
+          val mask = netif.ifa_netmask
           val mask6 = mask.cast[Ptr[sockaddr_in6]]
           val mask6in = mask6.sin6_addr
           val maskBytes = Array.fill[Long](16)(0)
@@ -152,13 +153,13 @@ final class NetworkInterface private (
           }
           val prefixLength = maskBytes.map(_.toBinaryString.groupBy(identity).mapValues(_.size).getOrElse('1', 0)).reduceLeft(_ + _)
           
-          getInterfaceAddressesImpl((!netif._1).cast[Ptr[ifaddrs.ifaddrs]], 
+          getInterfaceAddressesImpl(netif.ifa_next.cast[Ptr[ifaddrs.ifaddrs]], 
                                     new InterfaceAddress(
                                       new Inet6Address(addrBytes), 
                                       prefixLength.toShort) :: acc)
         }
       } else {
-        getInterfaceAddressesImpl((!netif._1).cast[Ptr[ifaddrs.ifaddrs]], acc)
+        getInterfaceAddressesImpl(netif.ifa_next.cast[Ptr[ifaddrs.ifaddrs]], acc)
       }
     } else {
       acc
@@ -331,20 +332,20 @@ object NetworkInterface {
     val ret = ifaddrs.getifaddrs(ptr)
     val first : Ptr[ifaddrs] = !ptr
     val toReturn = traverseInterfaces(first, ArrayBuffer.empty[NetworkInterface])
-    freeifaddrs(first)
+    //freeifaddrs(first)
     toReturn
   }
 
   private def traverseInterfaces(netif : Ptr[ifaddrs], acc : ArrayBuffer[NetworkInterface]) : Array[NetworkInterface] = {
     if (netif != null) {
-      val netifName = fromCString(!netif._2)
+      val netifName = fromCString(netif.ifa_name)
       val currNetif = acc.find(_.getName() == netifName) match {
         case Some(someNetif) => someNetif
-        case None => new NetworkInterface(netifName, netifName, if_nametoindex(!netif._2).toInt)
+        case None => new NetworkInterface(netifName, netifName, if_nametoindex(netif.ifa_name).toInt)
       }
-      if (!netif._4 != null) {
-        val addr : Ptr[sockaddr] = !netif._4
-        if (!addr._1 == AF_INET.toUInt) {
+      if (netif.ifa_netmask != null) {
+        val addr : Ptr[sockaddr] = netif.ifa_addr
+        if (addr.sa_family == AF_INET.toUInt) {
           val addr4 = addr.cast[Ptr[sockaddr_in]]
           val addr4in = addr4.sin_addr.in_addr
           val addrBytes = Array.fill[Byte](4)(0)
@@ -355,8 +356,8 @@ object NetworkInterface {
           val inet = new Inet4Address(addrBytes)
           currNetif.addresses += inet
           acc.find(_.getName() == netifName) match {
-            case Some(someNetif) => traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc)
-            case None => traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc += currNetif)
+            case Some(someNetif) => traverseInterfaces(netif.ifa_next.cast[Ptr[ifaddrs]], acc)
+            case None => traverseInterfaces(netif.ifa_next.cast[Ptr[ifaddrs]], acc += currNetif)
           }
         } else {
           val addr6 = addr.cast[Ptr[sockaddr_in6]]
@@ -368,12 +369,12 @@ object NetworkInterface {
           val inet = new Inet6Address(addrBytes)
           currNetif.addresses += inet
           acc.find(_.getName() == netifName) match {
-            case Some(someNetif) => traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc)
-            case None => traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc += currNetif)
+            case Some(someNetif) => traverseInterfaces(netif.ifa_next.cast[Ptr[ifaddrs]], acc)
+            case None => traverseInterfaces(netif.ifa_next.cast[Ptr[ifaddrs]], acc += currNetif)
           }
         }
       } else {
-        traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc += currNetif)
+        traverseInterfaces(netif.ifa_next.cast[Ptr[ifaddrs]], acc += currNetif)
       }
     } else {
       acc.toArray
