@@ -6,6 +6,7 @@ import collection.JavaConverters._
 
 import scalanative.native._
 import scalanative.posix.net._if._
+import scalanative.posix.net.ifOps._
 import scalanative.posix.sys.socket._
 import scalanative.posix.sys.socketOps._
 import scalanative.posix.sys.ioctl._
@@ -215,14 +216,14 @@ final class NetworkInterface private (
       }
       val ifc = stackalloc[ifconf]
       val buf = stackalloc[Byte](2048)
-      !ifc._1 = 2048
-      !ifc._2 = buf
+      ifc.if_index = 2048
+      ifc.if_name = buf
       if (ioctl(fd, SIOCGIFCONF, ifc.cast[Ptr[Byte]]) != 0){
         throw new SocketException("The operation failed with no recovery possible")
       }
 
-      val ifr = !ifc._2
-      val n = !ifc._1 / ifreqSize
+      val ifr = ifc.if_name
+      val n = ifc.if_index / ifreqSize
 
       for (i <- 0 until n.toInt) {
         val ifname = (ifr + (i * ifreqSize))
@@ -263,14 +264,14 @@ final class NetworkInterface private (
       }
       val ifc = stackalloc[ifconf]
       val buf = stackalloc[Byte](2048)
-      !ifc._1 = 2048
-      !ifc._2 = buf
+      ifc.if_index = 2048
+      ifc.if_name = buf
       if (ioctl(fd, SIOCGIFCONF, ifc.cast[Ptr[Byte]]) != 0){
         throw new SocketException("The operation failed with no recovery possible")
       }
 
-      val ifr = !ifc._2
-      val n = !ifc._1 / ifreqSize
+      val ifr = ifc.if_name
+      val n = ifc.if_index / ifreqSize
 
       for (i <- 0 until n.toInt) {
         val ifname = (ifr + (i * ifreqSize))
@@ -300,14 +301,14 @@ final class NetworkInterface private (
     }
     val ifc = stackalloc[ifconf]
     val buf = stackalloc[Byte](2048)
-    !ifc._1 = 2048
-    !ifc._2 = buf
+    ifc.if_index = 2048
+    ifc.if_name = buf
     if (ioctl(fd, SIOCGIFCONF, ifc.cast[Ptr[Byte]]) != 0){
       throw new SocketException("The operation failed with no recovery possible")
     }
 
-    val ifr = !ifc._2
-    val n = !ifc._1 / ifreqSize
+    val ifr = ifc.if_name
+    val n = ifc.if_index / ifreqSize
 
     for (i <- 0 until n.toInt) {
       val ifname = (ifr + (i * ifreqSize))
