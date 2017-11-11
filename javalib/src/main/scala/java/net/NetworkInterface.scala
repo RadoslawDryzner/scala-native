@@ -7,10 +7,12 @@ import collection.JavaConverters._
 import scalanative.native._
 import scalanative.posix.net._if._
 import scalanative.posix.sys.socket._
+import scalanative.posix.sys.socketOps._
 import scalanative.posix.sys.ioctl._
 import scalanative.posix.unistd._
 import scalanative.native.ifaddrs._
 import scalanative.posix.netinet.in._
+import scalanative.posix.netinet.inOps._
 
 import java.util.Enumeration
 
@@ -108,7 +110,7 @@ final class NetworkInterface private (
     val ret = ifaddrs.getifaddrs(ptr)
     val first : Ptr[ifaddrs] = !ptr
     val toReturn = getInterfaceAddressesImpl(first, List()).asJava
-    freeifaddrs(first)
+    //freeifaddrs(first)
     toReturn
   }
 
@@ -118,32 +120,32 @@ final class NetworkInterface private (
       val netifName = fromCString(!netif._2)
       if (netifName == name && !netif._4 != null) {
         val addr : Ptr[sockaddr] = !netif._4
-        if (!addr._1 == AF_INET.toUInt) {
+        if (addr.sa_family == AF_INET.toUInt) {
           val addr4 = addr.cast[Ptr[sockaddr_in]]
-          val addr4in = !(addr4._3)._1
+          val addr4in = addr4.sin_addr.in_addr
           val addrBytes = Array.fill[Byte](4)(0)
           for (i <- 3 to 0 by -1) {
-            addrBytes(i) = (addr4in.toByte / math.pow(2, i * 8)).toByte
+            addrBytes(i) = (addr4in >> i * 8).toByte
           }
           val mask = !netif._5
           val mask4 = mask.cast[Ptr[sockaddr_in]]
-          val mask4in = !(mask4._3)._1
+          val mask4in = mask4.sin_addr.in_addr
           val prefixLength = mask4in.toBinaryString.groupBy(identity).mapValues(_.size)('1')
           
           getInterfaceAddressesImpl((!netif._1).cast[Ptr[ifaddrs.ifaddrs]], 
                                     new InterfaceAddress(
                                       new Inet4Address(addrBytes), 
                                       prefixLength.toShort) :: acc)
-        } else if (!addr._1 == AF_INET6.toUInt) {
-          val addr6 = addr.cast[Ptr[Byte]]
-          val addr6in : Ptr[in6_addr] = ((addr6 + 8)).cast[Ptr[in6_addr]]
+        } else {
+          val addr6 = addr.cast[Ptr[sockaddr_in6]]
+          val addr6in = addr6.sin6_addr
           val addrBytes = Array.fill[Byte](16)(0)
           for (i <- 0 until 16) {
             addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
           }
           val mask = !netif._5
-          val mask6 = mask.cast[Ptr[Byte]]
-          val mask6in = ((mask6 + 8)).cast[Ptr[in6_addr]]
+          val mask6 = mask.cast[Ptr[sockaddr_in6]]
+          val mask6in = mask6.sin6_addr
           val maskBytes = Array.fill[Long](16)(0)
           for (i <- 0 until 16) {
             maskBytes(i) = (!((mask6in._1)._1 + i)).toLong
@@ -154,8 +156,6 @@ final class NetworkInterface private (
                                     new InterfaceAddress(
                                       new Inet6Address(addrBytes), 
                                       prefixLength.toShort) :: acc)
-        } else {
-          getInterfaceAddressesImpl((!netif._1).cast[Ptr[ifaddrs.ifaddrs]], acc)
         }
       } else {
         getInterfaceAddressesImpl((!netif._1).cast[Ptr[ifaddrs.ifaddrs]], acc)
@@ -346,10 +346,11 @@ object NetworkInterface {
         val addr : Ptr[sockaddr] = !netif._4
         if (!addr._1 == AF_INET.toUInt) {
           val addr4 = addr.cast[Ptr[sockaddr_in]]
-          val addr4in = !(addr4._3)._1
+          val addr4in = addr4.sin_addr.in_addr
           val addrBytes = Array.fill[Byte](4)(0)
+          
           for (i <- 3 to 0 by -1) {
-            addrBytes(i) = (addr4in.toByte / math.pow(2, i * 8)).toByte
+            addrBytes(i) = (addr4in >> i * 8).toByte
           }
           val inet = new Inet4Address(addrBytes)
           currNetif.addresses += inet
@@ -357,9 +358,9 @@ object NetworkInterface {
             case Some(someNetif) => traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc)
             case None => traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc += currNetif)
           }
-        } else if (!addr._1 == AF_INET6.toUInt) {
-          val addr6 = addr.cast[Ptr[Byte]]
-          val addr6in : Ptr[in6_addr] = ((addr6 + 8)).cast[Ptr[in6_addr]]
+        } else {
+          val addr6 = addr.cast[Ptr[sockaddr_in6]]
+          val addr6in = addr6.sin6_addr
           val addrBytes = Array.fill[Byte](16)(0)
           for (i <- 0 until 16) {
             addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
@@ -370,8 +371,6 @@ object NetworkInterface {
             case Some(someNetif) => traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc)
             case None => traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc += currNetif)
           }
-        } else {
-          traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc)
         }
       } else {
         traverseInterfaces((!netif._1).cast[Ptr[ifaddrs]], acc += currNetif)
