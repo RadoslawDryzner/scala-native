@@ -378,7 +378,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       val in4addr = stdlib.malloc(sizeof[in.sockaddr_in]).cast[Ptr[in.sockaddr_in]]
       !in4addr._1 = socket.AF_INET.toUShort
       !in4addr._2 = inet.htons(port.toUShort)
-      val in4addr_b = stdlib.malloc(sizeof[in.in_addr]).cast[Ptr[in.in_addr]]
+      val in4addr_b = in4addr._3
       !in4addr_b._1 = 0.toUInt
       for (i <- 0 until 4) {
         !in4addr_b._1 = !in4addr_b._1 | (in4.ipAddress(i).toUByte << (i * 8))
@@ -427,6 +427,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
           throw new SocketException("Bad socket.")
         }
         val result = sendMsg(fd, message, 0, pack.length, 0, sockaddr, addrLen.toUInt)
+        stdlib.free(sockaddr.cast[Ptr[Byte]])
 
         if (result < 0) {
           throw new SocketException(fromCString(string.strerror(errno.errno)))
