@@ -203,6 +203,13 @@ int scalanative_recvfrom(int socket, void *buffer, size_t length, int flags,
 
     if (convert_result == 0) {
         result = recvfrom(socket, buffer, length, flags, converted_address, address_len);
+
+        convert_result = scalanative_convert_scalanative_sockaddr(converted_address, address, address_len);
+
+        if (convert_result != 0) {
+            errno = convert_result;
+            result = -1;
+        }
     } else {
         errno = convert_result;
         result = -1;
