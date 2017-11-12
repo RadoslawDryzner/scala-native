@@ -76,13 +76,18 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     string.memset(hints.cast[Ptr[Byte]], 0, sizeof[addrinfo])
     hints.ai_family = socket.AF_UNSPEC
     hints.ai_flags = AI_NUMERICHOST
-    hints.ai_socktype = socket.SOCK_STREAM
+    hints.ai_socktype = socket.SOCK_DGRAM
+
+    val hostname = if (addr == InetAddress.ANY) "0:0:0:0:0:0:0:0" else addr.getHostAddress
 
     Zone { implicit z =>
-      val cIP = toCString(addr.getHostAddress)
+      var cIP = toCString(hostname)
       if (getaddrinfo(cIP, toCString(port.toString), hints, ret) != 0) {
-        throw new BindException(
-          "Couldn't resolve address: " + addr.getHostAddress)
+        cIP = toCString(addr.getHostAddress)
+        if (getaddrinfo(cIP, toCString(port.toString), hints, ret) != 0) {
+          throw new BindException(
+            "Couldn't resolve address: " + addr.getHostAddress)
+        }
       }
     }
 
@@ -121,8 +126,13 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
   }
 
   def create() : Unit = {
-    val sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
-    if (sock < 0) throw new IOException("Couldn't create a socket")
+    var sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, 0)
+    if (sock < 0) {
+      sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0); 
+    }
+    if (sock < 0){
+      throw new IOException("Couldn't create a socket")
+    }
     fd = new FileDescriptor(sock)
   }
 
