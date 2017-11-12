@@ -112,8 +112,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  def close() : Unit = {
-    // TODO : synchronised ???
+  def close() : Unit = fd.synchronized {
     if (fd.valid()) {
       try {
         cClose(fd.fd)
@@ -136,21 +135,69 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
   }
 
   override def finalize() : Unit = close()
-  
-  def getOption(optID : Int) : Object = optID match {
-    case SocketOptions.SO_TIMEOUT => Int.box(receiveTimeout)
-    case SocketOptions.IP_TOS => Int.box(trafficClass)
-    case _ => {
-      val result : Object = ??? // TODO : platform stuff
-      if (optID == SocketOptions.IP_MULTICAST_IF &&
-          (/* TODO : Platform stuff */ MULTICAST_IF) != 0) {
-        try {
-          InetAddress.getByAddress(ipaddress)
-        } catch {
-          case e : UnknownHostException => null
+
+  private def getSocketFlags() : Int = 0
+
+  private def nativeValueFromOption(option: Int) = option match {
+    case SocketOptions.IP_TOS       => in.IP_TOS
+    case SocketOptions.SO_KEEPALIVE => socket.SO_KEEPALIVE
+    case SocketOptions.SO_LINGER    => socket.SO_LINGER
+    case SocketOptions.SO_TIMEOUT   => socket.SO_RCVTIMEO
+    case SocketOptions.SO_OOBINLINE => socket.SO_OOBINLINE
+    case SocketOptions.SO_RCVBUF    => socket.SO_RCVBUF
+    case SocketOptions.SO_SNDBUF    => socket.SO_SNDBUF
+    case SocketOptions.SO_REUSEADDR => socket.SO_REUSEADDR
+    case SocketOptions.TCP_NODELAY  => tcp.TCP_NODELAY
+    case _                          => sys.error(s"Unknown option: $option")
+  }
+
+  override def getOption(optID: Int): Object = {
+    if (!fd.valid()) {
+      throw new SocketException("Bad socket.")
+    }
+
+    if (optID == SocketOptions.SO_TIMEOUT) {
+      return Integer.valueOf(receiveTimeout)
+    }
+
+    val level = optID match {
+      case SocketOptions.TCP_NODELAY => in.IPPROTO_TCP
+      case SocketOptions.IP_TOS      => in.IPPROTO_IP
+      case _                         => socket.SOL_SOCKET
+    }
+
+    val optValue = nativeValueFromOption(optID)
+
+    val opt = if (optID == SocketOptions.SO_LINGER) {
+      stackalloc[socket.linger].cast[Ptr[Byte]]
+    } else {
+      stackalloc[CInt].cast[Ptr[Byte]]
+    }
+
+    val len = stackalloc[socket.socklen_t]
+    !len = if (optID == SocketOptions.SO_LINGER) {
+      sizeof[socket.linger].toUInt
+    } else {
+      sizeof[CInt].toUInt
+    }
+
+    if (socket.getsockopt(fd.fd, level, optValue, opt, len) == -1) {
+      throw new SocketException(fromCString(string.strerror(errno.errno)))
+    }
+
+    optID match {
+      case SocketOptions.TCP_NODELAY | SocketOptions.SO_KEEPALIVE |
+      SocketOptions.SO_REUSEADDR | SocketOptions.SO_OOBINLINE =>
+        Boolean.box(!(opt.cast[Ptr[CInt]]) != 0)
+      case SocketOptions.SO_LINGER =>
+        val linger = opt.cast[Ptr[socket.linger]]
+        if (linger.l_onoff != 0) {
+          Integer.valueOf(linger.l_linger)
+        } else {
+          Integer.valueOf(-1)
         }
-      }
-      result
+      case _ =>
+        Integer.valueOf(!(opt.cast[Ptr[CInt]]))
     }
   }
 
