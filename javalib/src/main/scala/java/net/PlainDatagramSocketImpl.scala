@@ -30,8 +30,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
   private val bindToDevice = false
   private var ipaddress = Array[Byte](0, 0, 0, 0)
   private var ttl = 1
-  // TODO : volatile ???
-  private var isNativeConnected : Boolean = _
+  @volatile private var isNativeConnected : Boolean = _
   var receiveTimeout : Int = _
   val streaming : Boolean = true
   var shutdownInput : Boolean = _
@@ -432,7 +431,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
           throw new SocketException("Bad socket.")
         }
         val result = sendMsg(fd, message, 0, pack.length, 0, sockaddr, addrLen.toUInt)
-        //stdlib.free(sockaddr.cast[Ptr[Byte]])
+        stdlib.free(sockaddr.cast[Ptr[Byte]])
 
         if (result < 0) {
           throw new SocketException(fromCString(string.strerror(errno.errno)))
@@ -511,6 +510,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     if (result != 0) {
       throw new ConnectException(fromCString(string.strerror(errno.errno)))
     }
+    stdlib.free(sockAddr.cast[Ptr[Byte]])
 
     try {
       connectedAddress = InetAddress.getByAddress(inetAddr.getAddress)
