@@ -3,7 +3,9 @@ package java.net
 import java.io.FileDescriptor
 import scala.scalanative.native._
 import scala.scalanative.posix.sys.socket
+import scala.scalanative.posix.sys.socketOps._
 import scala.scalanative.posix.netinet.in
+import scala.scalanative.posix.netinet.inOps._
 
 abstract class DatagramSocketImpl extends SocketOptions {
   protected[net] var fd : FileDescriptor = null
@@ -27,15 +29,15 @@ abstract class DatagramSocketImpl extends SocketOptions {
 
     if (!sin._1 != socket.AF_INET.toUShort) {
       val addr4 = sin.cast[Ptr[in.sockaddr_in]]
-      val addr4in = !(addr4._3)._1
+      val addr4in = addr4.sin_addr.in_addr
       val addrBytes = Array.fill[Byte](4)(0)
       for (i <- 3 to 0 by -1) {
-        addrBytes(i) = (addr4in.toByte / math.pow(2, i * 8)).toByte
+        addrBytes(i) = (addr4in >> i * 8).toByte
       }
       new Inet4Address(addrBytes)
     } else {
-      val addr6 = sin.cast[Ptr[Byte]]
-      val addr6in : Ptr[in.in6_addr] = ((addr6 + 8)).cast[Ptr[in.in6_addr]]
+      val addr6 = sin.cast[Ptr[in.sockaddr_in6]]
+      val addr6in = addr6.sin6_addr
       val addrBytes = Array.fill[Byte](16)(0)
       for (i <- 0 until 16) {
         addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
