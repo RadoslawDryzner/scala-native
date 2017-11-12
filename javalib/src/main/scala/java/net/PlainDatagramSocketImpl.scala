@@ -248,16 +248,16 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
 
       pack.port = if (!sin._1 != socket.AF_INET.toUShort) {
         val addr4 = sin.cast[Ptr[in.sockaddr_in]]
-        val addr4in = !(addr4._3)._1
+        val addr4in = addr4.sin_addr.in_addr
         val addrBytes = Array.fill[Byte](4)(0)
         for (i <- 3 to 0 by -1) {
-          addrBytes(i) = (addr4in.toByte / math.pow(2, i * 8)).toByte
+          addrBytes(i) = (addr4in >> i * 8).toByte
         }
         pack.setAddress(new Inet4Address(addrBytes))
         inet.ntohs(!addr4._2).toInt
       } else {
-        val addr6 = sin.cast[Ptr[Byte]]
-        val addr6in : Ptr[in.in6_addr] = ((addr6 + 8)).cast[Ptr[in.in6_addr]]
+        val addr6 = sin.cast[Ptr[in.sockaddr_in6]]
+        val addr6in = addr6.sin6_addr
         val addrBytes = Array.fill[Byte](16)(0)
         for (i <- 0 until 16) {
           addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
@@ -306,14 +306,14 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
 
       val port = if (!sin._1 != socket.AF_INET.toUShort) {
         val addr4 = sin.cast[Ptr[in.sockaddr_in]]
-        val addr4in = !(addr4._3)._1
+        val addr4in = addr4.sin_addr.in_addr
         for (i <- 3 to 0 by -1) {
-          sender.ipAddress(i) = (addr4in.toByte / math.pow(2, i * 8)).toByte
+          sender.ipAddress(i) = (addr4in >> i * 8).toByte
         }
         inet.ntohs(!addr4._2)
       } else {
-        val addr6 = sin.cast[Ptr[Byte]]
-        val addr6in : Ptr[in.in6_addr] = ((addr6 + 8)).cast[Ptr[in.in6_addr]]
+        val addr6 = sin.cast[Ptr[in.sockaddr_in6]]
+        val addr6in = addr6.sin6_addr
         for (i <- 0 until 16) {
           sender.ipAddress(i) = (!((addr6in._1)._1 + i)).toByte
         }
@@ -347,7 +347,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
     val result = socket.send(fd.fd, (msg + sent), length, flags).toInt
     if (result < 0) {
-      0
+      result
     } else {
       val newLength = length - result.toInt
       val newSent = sent + result.toInt
@@ -362,7 +362,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
                       destAddr : Ptr[socket.sockaddr], addrlen : socket.socklen_t) : Int = {
     val result = socket.sendto(fd.fd, (msg + sent), length, flags, destAddr, addrlen).toInt
     if (result < 0) {
-      0
+      result
     } else {
       val newLength = length - result.toInt
       val newSent = sent + result.toInt
@@ -376,29 +376,25 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
   def getSockAddr(address : InetAddress, port: Int) : Ptr[socket.sockaddr] = address match {
     case in4 : Inet4Address => {
       val in4addr = stdlib.malloc(sizeof[in.sockaddr_in]).cast[Ptr[in.sockaddr_in]]
-      !in4addr._1 = socket.AF_INET.toUShort
-      !in4addr._2 = inet.htons(port.toUShort)
-      val in4addr_b = in4addr._3
-      !in4addr_b._1 = 0.toUInt
+      in4addr.sin_family = socket.AF_INET.toUShort
+      in4addr.sin_port = inet.htons(port.toUShort)
+      val in4addr_b = in4addr.sin_addr
+      in4addr_b.in_addr = 0.toUInt
       for (i <- 0 until 4) {
-        !in4addr_b._1 = !in4addr_b._1 | (in4.ipAddress(i).toUByte << (i * 8))
+        in4addr_b.in_addr = in4addr_b.in_addr | (in4.ipAddress(i).toUByte << (i * 8))
       }
-      !in4addr._3 = !in4addr_b
       in4addr.cast[Ptr[socket.sockaddr]]
     }
     case in6 : Inet6Address => {
-      val in6addr = stackalloc[Byte](sizeof[in.sockaddr_in6])
-      !(in6addr.cast[Ptr[UShort]]) = socket.AF_INET6.toUShort
-      !((in6addr + 2).cast[Ptr[UShort]]) = inet.htons(port.toUShort)
-      !((in6addr + 4).cast[Ptr[UInt]]) = ((trafficClass & 0xFF) << 20).toUShort
-      val in6addr_b = stackalloc[in.in6_addr]
-      val in6addr_a = stackalloc[CArray[UByte, in._16]]
+      val in6addr = stdlib.malloc(sizeof[in.sockaddr_in6]).cast[Ptr[in.sockaddr_in6]]
+      in6addr.sin6_family = socket.AF_INET6.toUShort
+      in6addr.sin6_port = inet.htons(port.toUShort)
+      in6addr.sin6_flowinfo = ((trafficClass & 0xFF) << 20).toUShort
+      val in6addr_b = in6addr.sin6_addr
       for (i <- 0 until 16) {
-        !(in6addr_a._1 + i) = in6.ipAddress(i).toUByte
+        !(in6addr_b._1._1 + i) = in6.ipAddress(i).toUByte
       }
-      !in6addr_b._1 = !(in6addr_a)
-      !((in6addr + 8).cast[Ptr[in.in6_addr]]) = !in6addr_b
-      !((in6addr + 24).cast[Ptr[UInt]]) = 0.toUInt
+      in6addr.sin6_scope_id = 0.toUInt
       in6addr.cast[Ptr[socket.sockaddr]]
     }
   }
@@ -427,7 +423,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
           throw new SocketException("Bad socket.")
         }
         val result = sendMsg(fd, message, 0, pack.length, 0, sockaddr, addrLen.toUInt)
-        stdlib.free(sockaddr.cast[Ptr[Byte]])
+        //stdlib.free(sockaddr.cast[Ptr[Byte]])
 
         if (result < 0) {
           throw new SocketException(fromCString(string.strerror(errno.errno)))
