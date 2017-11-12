@@ -244,45 +244,44 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     val sin = stackalloc[socket.sockaddr]
 
     val localCount = if (pack.length < 65536) pack.length else 65536
-    Zone { implicit z =>
-      val message = alloc[Byte](localCount)
-      if (!fd.valid()) {
-        throw new SocketException("Bad Socket.")
-      }
-      selectRead(fd, receiveTimeout)
-      var flags = 0
-      if (peek) {
-        flags = socket.MSG_PEEK
-      }
-      val result = socket.recvfrom(fd.fd, message, localCount, flags, sin, len).toInt
-
-      pack.port = if (!sin._1 != socket.AF_INET.toUShort) {
-        val addr4 = sin.cast[Ptr[in.sockaddr_in]]
-        val addr4in = addr4.sin_addr.in_addr
-        val addrBytes = Array.fill[Byte](4)(0)
-        for (i <- 3 to 0 by -1) {
-          addrBytes(i) = (addr4in >> i * 8).toByte
-        }
-        pack.setAddress(new Inet4Address(addrBytes))
-        inet.ntohs(!addr4._2).toInt
-      } else {
-        val addr6 = sin.cast[Ptr[in.sockaddr_in6]]
-        val addr6in = addr6.sin6_addr
-        val addrBytes = Array.fill[Byte](16)(0)
-        for (i <- 0 until 16) {
-          addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
-        }
-        pack.setAddress(new Inet6Address(addrBytes))
-        inet.ntohs(!(addr6 + 2).cast[Ptr[in.in_port_t]]).toInt
-      }
-
-      if (result > 0) {
-        for (i <- 0 until localCount) {
-          pack.data(i) = !(message + i)
-        }
-      }
-      result.toInt
+    val message = stackalloc[Byte](localCount)
+    if (!fd.valid()) {
+      throw new SocketException("Bad Socket.")
     }
+    selectRead(fd, receiveTimeout)
+    var flags = 0
+    if (peek) {
+      flags = socket.MSG_PEEK
+    }
+    val result = socket.recvfrom(fd.fd, message, localCount, flags, sin, len).toInt
+    println("Family in scala: " + sin.sa_family)
+
+    pack.port = if (!sin._1 == socket.AF_INET.toUShort) {
+      val addr4 = sin.cast[Ptr[in.sockaddr_in]]
+      val addr4in = addr4.sin_addr.in_addr
+      val addrBytes = Array.fill[Byte](4)(0)
+      for (i <- 3 to 0 by -1) {
+        addrBytes(i) = (addr4in >> i * 8).toByte
+      }
+      pack.setAddress(new Inet4Address(addrBytes))
+      inet.ntohs(!addr4._2).toInt
+    } else {
+      val addr6 = sin.cast[Ptr[in.sockaddr_in6]]
+      val addr6in = addr6.sin6_addr
+      val addrBytes = Array.fill[Byte](16)(0)
+      for (i <- 0 until 16) {
+        addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
+      }
+      pack.setAddress(new Inet6Address(addrBytes))
+      inet.ntohs(!(addr6 + 2).cast[Ptr[in.in_port_t]]).toInt
+    }
+
+    if (result > 0) {
+      for (i <- 0 until localCount) {
+        pack.data(i) = !(message + i)
+      }
+    }
+    result.toInt
   }
 
   protected[net] def peek(sender : InetAddress) : Int = {
