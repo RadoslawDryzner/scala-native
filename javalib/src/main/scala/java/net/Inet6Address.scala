@@ -25,7 +25,6 @@ final class Inet6Address private[net] (ipAddress: Array[Byte],
     ipAddress.dropRight(1).forall(_ == 0)
   }
 
-  // TODO: these fields
   @transient
   private[net] var scopedIf : NetworkInterface= null
   private[net] var ifname : String= null
