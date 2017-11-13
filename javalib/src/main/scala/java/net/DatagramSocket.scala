@@ -6,6 +6,9 @@ class DatagramSocket private (
     private[net] var impl : DatagramSocketImpl,
     private[net] var address : InetAddress){
 
+  private final class Lock
+  private val lock = new Lock
+
   private[net] var port = -1
   private[net] var bound = false
   private var connected = false
@@ -41,25 +44,27 @@ class DatagramSocket private (
       throw new IllegalArgumentException(s"Address is null or port $aPort is not within range.")
     }
 
-    if (isClosed()) {
-      return
-    }
-    
-    try {
-      checkClosedAndBind(true)
-    } catch {
-      case e : SocketException => // Ignored
-    }
+    lock.synchronized{
+      if (isClosed()) {
+        return
+      }
 
-    try {
-      impl.connect(anAddress, aPort)
-    } catch {
-      case e : SocketException => // not connected at the native level just do what we did before
-    }
+      try {
+        checkClosedAndBind(true)
+      } catch {
+        case e : SocketException => // Ignored
+      }
 
-    address = anAddress
-    port = aPort
-    connected = true
+      try {
+        impl.connect(anAddress, aPort)
+      } catch {
+        case e : SocketException => // not connected at the native level just do what we did before
+      }
+
+      address = anAddress
+      port = aPort
+      connected = true
+    }
   }
 
   def disconnect() : Unit = {
@@ -314,18 +319,19 @@ class DatagramSocket private (
       throw new SocketException(s"Host is unresolved\: $hostName")
     }
 
-    // TODO : synchronised also in another connect ?
-    checkClosedAndBind(true)
+    lock.synchronized {
+      checkClosedAndBind(true)
 
-    try {
-      impl.connect(inetAddr.getAddress, inetAddr.getPort)
-    } catch {
-      case e : Exception => // Not connected at the native level just do what we did before
+      try {
+        impl.connect(inetAddr.getAddress, inetAddr.getPort)
+      } catch {
+        case e : Exception => // Not connected at the native level just do what we did before
+      }
+
+      address = inetAddr.getAddress
+      port = inetAddr.getPort
+      connected = true
     }
-
-    address = inetAddr.getAddress
-    port = inetAddr.getPort
-    connected = true
   }
 
   def isBound() : Boolean = bound
