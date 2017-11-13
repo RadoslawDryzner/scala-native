@@ -680,15 +680,15 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
   }
 
   protected[net] def setTimeToLive(ttl : Int) : Unit = {
-    setOption(IP_MULTICAST_TTL, Byte.box((ttl & 0xFF).asInstanceOf[Byte])) // TODO : correct way to cast ??
-    if (MULTICAST_TTL != 0){ // TODO : Platform stuff
+    setOption(IP_MULTICAST_TTL, Byte.box((ttl & 0xFF).asInstanceOf[Byte]))
+    if ((getSocketFlags() & MULTICAST_TTL) != 0){
       this.ttl = ttl
     }
   }
 
   protected[net] def setTTL(ttl : Byte) : Unit = {
     setOption(IP_MULTICAST_TTL, Byte.box(ttl))
-    if (MULTICAST_TTL != 0) { // TODO : Platform stuff
+    if ((getSocketFlags() & MULTICAST_TTL) != 0) {
       this.ttl = ttl
     }
   }
