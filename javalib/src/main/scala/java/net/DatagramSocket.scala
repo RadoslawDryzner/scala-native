@@ -236,6 +236,15 @@ class DatagramSocket private (
     impl.setOption(SocketOptions.SO_RCVBUF, Int.box(size))
   }
 
+  def setSoTimeout(timeout : Int) : Unit = synchronized {
+    if (timeout < 0) {
+      throw new IllegalArgumentException("Invalid negative timeout")
+    }
+
+    checkClosedAndBind(false)
+    impl.setOption(SocketOptions.SO_TIMEOUT, Int.box(timeout))
+  }
+
   protected[net] def this(socketImpl : DatagramSocketImpl) = {
     this(socketImpl, null)
     if (socketImpl == null) {
@@ -325,6 +334,7 @@ class DatagramSocket private (
       try {
         impl.connect(inetAddr.getAddress, inetAddr.getPort)
       } catch {
+        case e : ConnectException => throw(e)
         case e : Exception => // Not connected at the native level just do what we did before
       }
 
@@ -380,8 +390,4 @@ class DatagramSocket private (
   }
   
   def isClosed() : Boolean = closed
-
-  // Datagram Channel not yet implemented but this returs null anyway
-  def getChannel() = null
-
 }
