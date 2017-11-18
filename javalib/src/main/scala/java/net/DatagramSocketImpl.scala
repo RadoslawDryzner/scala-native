@@ -27,7 +27,7 @@ abstract class DatagramSocketImpl extends SocketOptions {
       return null
     }
 
-    if (!sin._1 != socket.AF_INET.toUShort) {
+    if (!sin._1 == socket.AF_INET.toUShort) {
       val addr4 = sin.cast[Ptr[in.sockaddr_in]]
       val addr4in = addr4.sin_addr.in_addr
       val addrBytes = Array.fill[Byte](4)(0)
