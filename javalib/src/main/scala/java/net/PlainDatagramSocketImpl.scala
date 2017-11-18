@@ -77,16 +77,11 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     hints.ai_flags = AI_NUMERICHOST
     hints.ai_socktype = socket.SOCK_DGRAM
 
-    val hostname = if (addr == InetAddress.ANY) "0:0:0:0:0:0:0:0" else addr.getHostAddress
-
     Zone { implicit z =>
-      var cIP = toCString(hostname)
+      val cIP = toCString(addr.getHostAddress)
       if (getaddrinfo(cIP, toCString(port.toString), hints, ret) != 0) {
-        cIP = toCString(addr.getHostAddress)
-        if (getaddrinfo(cIP, toCString(port.toString), hints, ret) != 0) {
-          throw new BindException(
-            "Couldn't resolve address: " + addr.getHostAddress)
-        }
+        throw new BindException(
+          "Couldn't resolve address: " + addr.getHostAddress)
       }
     }
 
@@ -106,7 +101,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
         "Couldn't bind to address: " + addr.getHostAddress + " on port: " + port)
     }
     try {
-      //setOption(SocketOptions.SO_BROADCAST, Boolean.box(true))
+      setOption(SocketOptions.SO_BROADCAST, Boolean.box(true))
     } catch {
       case e : IOException =>
     }
@@ -124,7 +119,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
   }
 
   def create() : Unit = {
-    var sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, 0)
+    var sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
     if (sock < 0) {
       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0); 
     }
@@ -364,7 +359,6 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       flags = socket.MSG_PEEK
     }
     val result = socket.recvfrom(fd.fd, message, localCount, flags, sin, len).toInt
-    println("Family in scala: " + sin.sa_family)
 
     pack.port = if (!sin._1 == socket.AF_INET.toUShort) {
       val addr4 = sin.cast[Ptr[in.sockaddr_in]]
@@ -724,12 +718,10 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       if (!fd.valid()) {
         throw new SocketException("Bad Socket.")
       }
-      val result = Zone { implicit z => 
-        val sockAddr = alloc[socket.sockaddr]
-        !sockAddr._1 = socket.AF_UNSPEC.toUShort
-        val addrLen = sizeof[socket.sockaddr].toUInt
-        socket.connect(fd.fd, sockAddr, addrLen)
-      }
+      val sockAddr = stackalloc[socket.sockaddr]
+      !sockAddr._1 = socket.AF_UNSPEC.toUShort
+      val addrLen = sizeof[in.sockaddr_in].toUInt
+      val result = socket.connect(fd.fd, sockAddr, addrLen)
       if (result != 0) {
         throw new SocketException(fromCString(string.strerror(errno.errno)))
       }
