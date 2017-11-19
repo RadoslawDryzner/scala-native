@@ -32,7 +32,7 @@ void convert_address(struct sockaddr *raw_in, struct scalanative_sockaddr **out)
 
 void scalanative_convert_ifaddrs(struct ifaddrs *in,
                                  struct scalanative_ifaddrs *out) {
-    out->ifa_name = in->ifa_name;
+    out->ifa_name = strdup(in->ifa_name);
     out->ifa_flags = in->ifa_flags;
     convert_address(in->ifa_addr, &out->ifa_addr);
     convert_address(in->ifa_netmask, &out->ifa_netmask);
@@ -47,7 +47,7 @@ void scalanative_convert_ifaddrs(struct ifaddrs *in,
     }
     if (next != NULL) {
         out->ifa_next = malloc(sizeof(struct scalanative_ifaddrs));
-        scalanative_convert_ifaddrs(in->ifa_next, out->ifa_next);
+        scalanative_convert_ifaddrs(next, out->ifa_next);
     } else {
         out->ifa_next = NULL;
     }
