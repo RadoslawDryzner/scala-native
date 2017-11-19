@@ -555,7 +555,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     val len : UInt = anOption match {
       case SocketOptions.SO_LINGER => sizeof[socket.linger].toUInt
       case SocketOptions.SO_TIMEOUT => sizeof[timeval].toUInt
-      case SocketOptions.IP_MULTICAST_IF => sizeof[in.sockaddr_in6].toUInt
+      case SocketOptions.IP_MULTICAST_IF => sizeof[in.sockaddr_in].toUInt
       case IP_MULTICAST_ADD | IP_MULTICAST_DROP => sizeof[in.ip_mreq].toUInt
       case _ => sizeof[CInt].toUInt
     }
