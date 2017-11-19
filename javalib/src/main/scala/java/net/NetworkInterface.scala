@@ -112,7 +112,7 @@ final class NetworkInterface private (
     val ret = ifaddrs.getifaddrs(ptr)
     val first : Ptr[ifaddrs] = !ptr
     val toReturn = getInterfaceAddressesImpl(first, List()).asJava
-    //freeifaddrs(first)
+    freeifaddrs(first)
     toReturn
   }
 
