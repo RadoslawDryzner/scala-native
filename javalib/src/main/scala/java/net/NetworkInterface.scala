@@ -333,7 +333,7 @@ object NetworkInterface {
     val ret = ifaddrs.getifaddrs(ptr)
     val first : Ptr[ifaddrs] = !ptr
     val toReturn = traverseInterfaces(first, ArrayBuffer.empty[NetworkInterface])
-    //freeifaddrs(first)
+    freeifaddrs(first)
     toReturn
   }
 

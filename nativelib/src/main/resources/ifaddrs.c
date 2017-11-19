@@ -51,6 +51,7 @@ void scalanative_convert_ifaddrs(struct ifaddrs *in,
     } else {
         out->ifa_next = NULL;
     }
+    out->ifa_data = NULL;
 }
 
 int scalanative_getifaddrs(struct scalanative_ifaddrs **ifap) {
@@ -77,14 +78,14 @@ int scalanative_getifaddrs(struct scalanative_ifaddrs **ifap) {
 }
 
 void scalanative_freeifaddrs(struct scalanative_ifaddrs *ifa) {
-    /*if (ifa == NULL) {
+    if (ifa == NULL) {
         return;
     }
     scalanative_freeifaddrs(ifa->ifa_next);
-    //free(ifa->ifa_name);
+    free(ifa->ifa_name);
     free(ifa->ifa_addr);
     free(ifa->ifa_netmask);
     free(ifa->_ifa_broadaddr);
     free(ifa->ifa_data);
-    free(ifa);*/
+    free(ifa);
 }
