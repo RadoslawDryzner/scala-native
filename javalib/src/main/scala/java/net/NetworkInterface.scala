@@ -216,14 +216,14 @@ final class NetworkInterface private (
       }
       val ifc = stackalloc[ifconf]
       val buf = stackalloc[Byte](2048)
-      ifc.if_index = 2048
-      ifc.if_name = buf
+      ifc.ifc_len = 2048
+      ifc.ifc_buf = buf
       if (ioctl(fd, SIOCGIFCONF, ifc.cast[Ptr[Byte]]) != 0){
         throw new SocketException("The operation failed with no recovery possible")
       }
 
-      val ifr = ifc.if_name
-      val n = ifc.if_index / ifreqSize
+      val ifr = ifc.ifc_buf
+      val n = ifc.ifc_len / ifreqSize
 
       for (i <- 0 until n.toInt) {
         val ifname = (ifr + (i * ifreqSize))
@@ -264,14 +264,14 @@ final class NetworkInterface private (
       }
       val ifc = stackalloc[ifconf]
       val buf = stackalloc[Byte](2048)
-      ifc.if_index = 2048
-      ifc.if_name = buf
+      ifc.ifc_len = 2048
+      ifc.ifc_buf = buf
       if (ioctl(fd, SIOCGIFCONF, ifc.cast[Ptr[Byte]]) != 0){
         throw new SocketException("The operation failed with no recovery possible")
       }
 
-      val ifr = ifc.if_name
-      val n = ifc.if_index / ifreqSize
+      val ifr = ifc.ifc_buf
+      val n = ifc.ifc_len / ifreqSize
 
       for (i <- 0 until n.toInt) {
         val ifname = (ifr + (i * ifreqSize))
@@ -301,14 +301,14 @@ final class NetworkInterface private (
     }
     val ifc = stackalloc[ifconf]
     val buf = stackalloc[Byte](2048)
-    ifc.if_index = 2048
-    ifc.if_name = buf
+    ifc.ifc_len = 2048
+    ifc.ifc_buf = buf
     if (ioctl(fd, SIOCGIFCONF, ifc.cast[Ptr[Byte]]) != 0){
       throw new SocketException("The operation failed with no recovery possible")
     }
 
-    val ifr = ifc.if_name
-    val n = ifc.if_index / ifreqSize
+    val ifr = ifc.ifc_buf
+    val n = ifc.ifc_len / ifreqSize
 
     for (i <- 0 until n.toInt) {
       val ifname = (ifr + (i * ifreqSize))
