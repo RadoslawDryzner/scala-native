@@ -7,7 +7,7 @@ import scalanative.native._
 @extern
 object _if {
   type ifconf = CStruct2[CInt,
-                         CString]
+                         Ptr[Byte]]
 
   def if_nametoindex(ifname : CString) : UInt = extern
 
@@ -28,10 +28,10 @@ object ifOps {
   import _if._
 
   implicit class ifOps(val ptr: Ptr[ifconf]) extends AnyVal {
-    def if_index: CInt = !ptr._1
-    def if_name: CString = !ptr._2
+    def ifc_len: CInt = !ptr._1
+    def ifc_buf: Ptr[Byte] = !ptr._2
 
-    def if_index_=(v: CInt) = !ptr._1 = v
-    def if_name_=(v: CString) = !ptr._2 = v
+    def ifc_len_=(v: CInt) = !ptr._1 = v
+    def ifc_buf_=(v: Ptr[Byte]) = !ptr._2 = v
   }
 }
