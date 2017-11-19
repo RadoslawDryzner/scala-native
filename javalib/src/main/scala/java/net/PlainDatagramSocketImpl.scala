@@ -369,6 +369,8 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
     pack.setAddress(getAddressFromBytes(sin.sa_family, sin))
 
+    pack.length = result.toInt
+
     if (result > 0) {
       for (i <- 0 until localCount) {
         pack.data(i) = !(message + i)
