@@ -344,7 +344,7 @@ object NetworkInterface {
         case Some(someNetif) => someNetif
         case None => new NetworkInterface(netifName, netifName, if_nametoindex(netif.ifa_name).toInt)
       }
-      if (netif.ifa_netmask != null) {
+      if (netif.ifa_addr != null) {
         val addr : Ptr[sockaddr] = netif.ifa_addr
         if (addr.sa_family == AF_INET.toUInt) {
           val addr4 = addr.cast[Ptr[sockaddr_in]]
