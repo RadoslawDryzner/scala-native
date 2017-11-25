@@ -131,8 +131,6 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
 
   override def finalize() : Unit = close()
 
-  private def getSocketFlags() : Int = 0
-
   private def getSocketOption(anOption : Int) : Object = {
     if (!fd.valid()) {
       throw new SocketException("Bad socket.")
@@ -228,8 +226,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     case SocketOptions.IP_TOS => Int.box(trafficClass)
     case _ => {
       val result : Object = getSocketOption(optID)
-      if (optID == SocketOptions.IP_MULTICAST_IF &&
-          (getSocketFlags() & MULTICAST_IF) != 0) {
+      if (optID == SocketOptions.IP_MULTICAST_IF) {
         try {
           InetAddress.getByAddress(ipaddress)
         } catch {
@@ -642,7 +639,6 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     if (optID == SocketOptions.SO_TIMEOUT) {
       receiveTimeout = Int.unbox(value)
     } else {
-      val flags : Int = getSocketFlags()
       try {
         setSocketOption(optID, value)
       } catch {
@@ -651,7 +647,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
             throw e
           }
       }
-      if (optID == SocketOptions.IP_MULTICAST_IF && (flags & MULTICAST_IF) != 0) {
+      if (optID == SocketOptions.IP_MULTICAST_IF) {
         val inet = value.asInstanceOf[InetAddress]
         if (InetAddress.bytesToInt(inet.getAddress(), 0) == 0 || inet.isLoopbackAddress()){
           ipaddress = value.asInstanceOf[InetAddress].getAddress()
@@ -677,16 +673,12 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
 
   protected[net] def setTimeToLive(ttl : Int) : Unit = {
     setOption(IP_MULTICAST_TTL, Byte.box((ttl & 0xFF).asInstanceOf[Byte]))
-    if ((getSocketFlags() & MULTICAST_TTL) != 0){
-      this.ttl = ttl
-    }
+    this.ttl = ttl
   }
 
   protected[net] def setTTL(ttl : Byte) : Unit = {
     setOption(IP_MULTICAST_TTL, Byte.box(ttl))
-    if ((getSocketFlags() & MULTICAST_TTL) != 0) {
-      this.ttl = ttl
-    }
+    this.ttl = ttl
   }
 
   override def connect(inetAddr : InetAddress, port : Int) : Unit = {
