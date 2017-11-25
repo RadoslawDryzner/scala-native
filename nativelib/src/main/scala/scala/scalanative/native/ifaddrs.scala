@@ -5,13 +5,12 @@ import scalanative.posix.sys.socket
 
 @extern
 object ifaddrs {
-  type ifaddrs = CStruct7[Ptr[Byte], // ifa_next
+  type ifaddrs = CStruct6[Ptr[Byte], // ifa_next
                           CString, // ifa_name
                           CUnsignedInt, // ifa_flags
                           Ptr[socket.sockaddr], //ifa_addr
                           Ptr[socket.sockaddr], //ifa_netmask
-                          Ptr[socket.sockaddr], //ifu_broadaddr
-                          Ptr[Byte]] // ifa_data
+                          Ptr[socket.sockaddr]] //ifu_broadaddr
 
   @name("scalanative_getifaddrs")
   def getifaddrs(ifap : Ptr[Ptr[ifaddrs]]) : CInt = extern
@@ -31,7 +30,6 @@ object ifaddrsOps {
     def ifa_netmask: Ptr[socket.sockaddr] = !ptr._5
     def ifa_broadaddr: Ptr[socket.sockaddr] = !ptr._6
     def ifa_dstaddr: Ptr[socket.sockaddr] = !ptr._6
-    def ifa_data: Ptr[Byte] = !ptr._7
 
     def ifa_next_=(v: Ptr[Byte]) = !ptr._1 = v
     def ifa_name_=(v: CString) = !ptr._2 = v
@@ -40,7 +38,6 @@ object ifaddrsOps {
     def ifa_netmask_=(v: Ptr[socket.sockaddr]) = !ptr._5 = v
     def ifa_broadaddr_=(v: Ptr[socket.sockaddr]) = !ptr._6 = v
     def ifa_dstaddr_=(v: Ptr[socket.sockaddr]) = !ptr._6 = v
-    def ifa_data_=(v: Ptr[Byte]) = !ptr._7 = v
   }
 }
 
