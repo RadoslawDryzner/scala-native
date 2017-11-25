@@ -3,9 +3,23 @@ package posix
 package net
 
 import scalanative.native._
+import scalanative.posix.sys.socket
 
 @extern
 object _if {
+  type _16 = Nat.Digit[Nat._1, Nat._6]
+
+  type ifreq = CStruct1[CArray[CChar, _16]]
+
+  type ifreq_hwaddr = CStruct2[CArray[CChar, _16],
+                               socket.sockaddr]
+  
+  type ifreq_flags = CStruct2[CArray[CChar, _16],
+                              CShort]
+  
+  type ifreq_mtu = CStruct2[CArray[CChar, _16],
+                            CInt]
+
   type ifconf = CStruct2[CInt,
                          Ptr[Byte]]
 
@@ -30,8 +44,22 @@ object ifOps {
   implicit class ifOps(val ptr: Ptr[ifconf]) extends AnyVal {
     def ifc_len: CInt = !ptr._1
     def ifc_buf: Ptr[Byte] = !ptr._2
+    def ifc_req: Ptr[ifreq] = (!ptr._2).cast[Ptr[ifreq]]
 
     def ifc_len_=(v: CInt) = !ptr._1 = v
     def ifc_buf_=(v: Ptr[Byte]) = !ptr._2 = v
+    def ifc_req_=(v: Ptr[ifreq]) = !ptr._2 = v.cast[Ptr[Byte]]
+  }
+
+  implicit class ifreqOps(val ptr: Ptr[ifreq]) extends AnyVal {
+    def ifr_name: Ptr[CArray[CChar, _16]] = ptr._1
+    def ifr_hwaddr: Ptr[socket.sockaddr] = ptr.cast[Ptr[ifreq_hwaddr]]._2
+    def ifr_flags: CShort = !(ptr.cast[Ptr[ifreq_flags]])._2
+    def ifr_mtu: CInt = !(ptr.cast[Ptr[ifreq_mtu]])._2
+    
+    def ifr_name_=(v: CArray[CChar, _16]) = !ptr._1 = v
+    def ifr_hwaddr_(v: Ptr[socket.sockaddr]) = !(ptr.cast[Ptr[ifreq_hwaddr]])._2 = !v
+    def ifr_flags_=(v: CShort) = !(ptr.cast[Ptr[ifreq_flags]])._2 = v
+    def ifr_mtu_=(v: CInt) = !(ptr.cast[Ptr[ifreq_mtu]])._2 = v
   }
 }

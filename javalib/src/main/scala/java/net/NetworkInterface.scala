@@ -222,20 +222,20 @@ final class NetworkInterface private (
         throw new SocketException("The operation failed with no recovery possible")
       }
 
-      val ifr = ifc.ifc_buf
+      val ifrs = ifc.ifc_buf
       val n = ifc.ifc_len / ifreqSize
 
       for (i <- 0 until n.toInt) {
-        val ifname = (ifr + (i * ifreqSize))
+        val ifr = (ifrs + (i * ifreqSize)).cast[Ptr[ifreq]]
+        val ifname = ifr.ifr_name.cast[CString]
         if (fromCString(ifname) == name) {
-          if(ioctl(fd, SIOCGIFHWADDR, (ifr + (i * ifreqSize))) != 0){
+          if(ioctl(fd, SIOCGIFHWADDR, ifr.cast[Ptr[Byte]]) != 0){
             close(fd)
             throw new SocketException("Could not retrieve information about socket.")
           }
-          // get array
           var allZero = true
           for(j <- 0 until macAddrSize) {
-            toReturn(j) = !((((ifname + ifnameSize).cast[Ptr[sockaddr]])._2)._1 + j)
+            toReturn(j) = !((ifr.ifr_hwaddr._2)._1 + j)
             if (toReturn(j) != 0) {
               allZero = false
             }
@@ -270,17 +270,18 @@ final class NetworkInterface private (
         throw new SocketException("The operation failed with no recovery possible")
       }
 
-      val ifr = ifc.ifc_buf
+      val ifrs = ifc.ifc_buf
       val n = ifc.ifc_len / ifreqSize
 
       for (i <- 0 until n.toInt) {
-        val ifname = (ifr + (i * ifreqSize))
+        val ifr = (ifrs + (i * ifreqSize)).cast[Ptr[ifreq]]
+        val ifname = ifr.ifr_name.cast[CString]
         if (fromCString(ifname) == name) {
-          if(ioctl(fd, SIOCGIFMTU, (ifr + (i * ifreqSize))) != 0){
+          if(ioctl(fd, SIOCGIFMTU, ifr.cast[Ptr[Byte]]) != 0){
             close(fd)
             throw new SocketException("Could not retrieve information about socket.")
           }
-          val mtu = !((ifname + ifnameSize).cast[Ptr[CInt]])
+          val mtu = ifr.ifr_mtu
           close(fd)
           return mtu
         }
@@ -307,17 +308,18 @@ final class NetworkInterface private (
       throw new SocketException("The operation failed with no recovery possible")
     }
 
-    val ifr = ifc.ifc_buf
+    val ifrs = ifc.ifc_buf
     val n = ifc.ifc_len / ifreqSize
 
     for (i <- 0 until n.toInt) {
-      val ifname = (ifr + (i * ifreqSize))
+      val ifr = (ifrs + (i * ifreqSize)).cast[Ptr[ifreq]]
+      val ifname = ifr.ifr_name.cast[CString]
       if (fromCString(ifname) == name) {
-        if(ioctl(fd, SIOCGIFFLAGS, (ifr + (i * ifreqSize))) != 0){
+        if(ioctl(fd, SIOCGIFFLAGS, ifr.cast[Ptr[Byte]]) != 0){
           close(fd)
           throw new SocketException("Could not retrieve information about socket.")
         }
-        val flags = !((ifname + ifnameSize).cast[Ptr[CShort]])
+        val flags = ifr.ifr_flags
         close(fd)
         return (flags & iiFlag) == iiFlag
       }
