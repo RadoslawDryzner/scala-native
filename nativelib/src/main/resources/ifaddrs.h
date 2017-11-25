@@ -10,7 +10,6 @@ struct scalanative_ifaddrs {
     struct scalanative_sockaddr *ifa_addr;
     struct scalanative_sockaddr *ifa_netmask;
     struct scalanative_sockaddr *_ifa_broadaddr;
-    void *ifa_data;
 };
 
 #endif
