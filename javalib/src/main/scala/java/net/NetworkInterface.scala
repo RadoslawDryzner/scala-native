@@ -417,13 +417,13 @@ object NetworkInterface {
     if (interfaces == null) {
       null
     } else {
-      interfaces.foreach(netif => netif.addresses.foreach(addr => {
-        if (addr.isLinkLocalAddress() || addr.isSiteLocalAddress()) {
+      interfaces.foreach(netif => netif.addresses.foreach{addr =>
+        if (addr != null || addr.isLinkLocalAddress() || addr.isSiteLocalAddress()) {
           addr.asInstanceOf[Inet6Address].scopedIf = netif
           addr.asInstanceOf[Inet6Address].ifname = netif.getName()
           addr.asInstanceOf[Inet6Address].scope_ifname_set = true
         }
-      }))
+      })
 
       val netifMap = interfaces.map(netif => (netif.getName(), netif)).toMap
       interfaces.foreach(netif => netif.getName().split(":") match {
