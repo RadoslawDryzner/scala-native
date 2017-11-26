@@ -3,18 +3,18 @@ package java.net
 import collection.JavaConverters._
 
 object NetworkInterfaceSuite extends tests.Suite {
-  var theInterfaces : Iterator[NetworkInterface] = null
-  var atLeastOneInterface = false
-  var atLeastTwoInterfaces = false
-  var networkInterface1 : NetworkInterface = null
-  var sameAsNetworkInterface1 : NetworkInterface = null
-  var networkInterface2 : NetworkInterface = null
+  var theInterfaces: Iterator[NetworkInterface] = null
+  var atLeastOneInterface                       = false
+  var atLeastTwoInterfaces                      = false
+  var networkInterface1: NetworkInterface       = null
+  var sameAsNetworkInterface1: NetworkInterface = null
+  var networkInterface2: NetworkInterface       = null
 
-  protected def setUp() : Unit = {
+  protected def setUp(): Unit = {
     try {
       theInterfaces = NetworkInterface.getNetworkInterfaces().asScala
     } catch {
-      case e : Exception => assert(false)
+      case e: Exception => assert(false)
     }
 
     theInterfaces.find(netif => netif.getInetAddresses().asScala.hasNext) match {
@@ -24,7 +24,12 @@ object NetworkInterfaceSuite extends tests.Suite {
       }
       case None => // Nothing
     }
-    theInterfaces.find(netif => netif.getInetAddresses().asScala.hasNext && netif != networkInterface1) match {
+    theInterfaces.find(
+      netif =>
+        netif
+          .getInetAddresses()
+          .asScala
+          .hasNext && netif != networkInterface1) match {
       case Some(netif) => {
         atLeastTwoInterfaces = true
         networkInterface2 = netif
@@ -34,11 +39,12 @@ object NetworkInterfaceSuite extends tests.Suite {
 
     if (atLeastOneInterface) {
       val addresses = networkInterface1.getInetAddresses().asScala
-      if (addresses.hasNext){
+      if (addresses.hasNext) {
         try {
-          sameAsNetworkInterface1 = NetworkInterface.getByInetAddress(addresses.next)
+          sameAsNetworkInterface1 =
+            NetworkInterface.getByInetAddress(addresses.next)
         } catch {
-          case e : SocketException => assert(false)
+          case e: SocketException => assert(false)
         }
       }
     }
@@ -46,18 +52,16 @@ object NetworkInterfaceSuite extends tests.Suite {
     theInterfaces = NetworkInterface.getNetworkInterfaces().asScala
   }
 
-  protected def tearDown() : Unit = {
-
-  }
+  protected def tearDown(): Unit = {}
 
   override def test(name: String)(body: => Unit): Unit =
     super.test(name) {
       setUp()
       try {
         body
-        } finally {
-          tearDown()
-        }
+      } finally {
+        tearDown()
+      }
     }
 
   override def testFails(name: String, issue: Int)(body: => Unit): Unit =
@@ -65,9 +69,9 @@ object NetworkInterfaceSuite extends tests.Suite {
       setUp()
       try {
         body
-        } finally {
-          tearDown()
-        }
+      } finally {
+        tearDown()
+      }
     }
 
   test("getName") {
@@ -76,18 +80,24 @@ object NetworkInterfaceSuite extends tests.Suite {
       assert(networkInterface1.getName() != "")
     }
 
-    if(atLeastOneInterface){
+    if (atLeastOneInterface) {
       assert(networkInterface1.getName() != networkInterface2.getName())
     }
   }
 
   test("getInetAddresses") {
     if (atLeastOneInterface) {
-      networkInterface1.getInetAddresses().asScala.foreach(addr => assert(addr != null))
+      networkInterface1
+        .getInetAddresses()
+        .asScala
+        .foreach(addr => assert(addr != null))
     }
 
     if (atLeastTwoInterfaces) {
-      networkInterface2.getInetAddresses().asScala.foreach(addr => assert(addr != null))
+      networkInterface2
+        .getInetAddresses()
+        .asScala
+        .foreach(addr => assert(addr != null))
     }
   }
 
@@ -98,7 +108,9 @@ object NetworkInterfaceSuite extends tests.Suite {
     }
 
     if (atLeastTwoInterfaces) {
-      assert(networkInterface1.getDisplayName() != networkInterface2.getDisplayName())
+      assert(
+        networkInterface1.getDisplayName() != networkInterface2
+          .getDisplayName())
     }
   }
 
@@ -107,11 +119,15 @@ object NetworkInterfaceSuite extends tests.Suite {
     assert(NetworkInterface.getByName("8not a name4") == null)
 
     if (atLeastOneInterface) {
-      assert(networkInterface1 == NetworkInterface.getByName(networkInterface1.getName()))
+      assert(
+        networkInterface1 == NetworkInterface.getByName(
+          networkInterface1.getName()))
     }
 
     if (atLeastTwoInterfaces) {
-      assert(networkInterface2 == NetworkInterface.getByName(networkInterface2.getName()))
+      assert(
+        networkInterface2 == NetworkInterface.getByName(
+          networkInterface2.getName()))
     }
   }
 
@@ -119,14 +135,22 @@ object NetworkInterfaceSuite extends tests.Suite {
     val addressBytes = Array[Byte](0, 0, 0, 0)
 
     assertThrows[NullPointerException](NetworkInterface.getByInetAddress(null))
-    assert(NetworkInterface.getByInetAddress(InetAddress.getByAddress(addressBytes)) == null)
+    assert(
+      NetworkInterface
+        .getByInetAddress(InetAddress.getByAddress(addressBytes)) == null)
 
     if (atLeastOneInterface) {
-      networkInterface1.getInetAddresses().asScala.foreach(addr => 
+      networkInterface1
+        .getInetAddresses()
+        .asScala
+        .foreach(addr =>
           assert(networkInterface1 == NetworkInterface.getByInetAddress(addr)))
     }
     if (atLeastTwoInterfaces) {
-      networkInterface2.getInetAddresses().asScala.foreach(addr => 
+      networkInterface2
+        .getInetAddresses()
+        .asScala
+        .foreach(addr =>
           assert(networkInterface2 == NetworkInterface.getByInetAddress(addr)))
     }
   }
@@ -164,14 +188,23 @@ object NetworkInterfaceSuite extends tests.Suite {
   }
 
   test("getInterfaceAddresses") {
-    NetworkInterface.getNetworkInterfaces().asScala.foreach(netif => netif.getInterfaceAddresses().asScala.foreach(addr => assert(addr != null)))
+    NetworkInterface
+      .getNetworkInterfaces()
+      .asScala
+      .foreach(
+        netif =>
+          netif
+            .getInterfaceAddresses()
+            .asScala
+            .foreach(addr => assert(addr != null)))
     //NetworkInterface.getNetworkInterfaces().asScala.foreach(netif => assert(netif.getInterfaceAddresses().asScala == netif.getInterfaceAddresses().asScala))
   }
 
   test("isLoopback") {
     if (theInterfaces != null) {
       theInterfaces.foreach(netif => {
-        val loopback = netif.getInetAddresses().asScala.exists(_.isLoopbackAddress())
+        val loopback =
+          netif.getInetAddresses().asScala.exists(_.isLoopbackAddress())
         assert(netif.isLoopback() == loopback)
       })
     }
@@ -183,7 +216,7 @@ object NetworkInterfaceSuite extends tests.Suite {
         val hwAddr = netif.getHardwareAddress()
         if (netif.isLoopback())
           assert(hwAddr == null || hwAddr.size == 0)
-        else 
+        else
           assert(hwAddr.size >= 0)
       })
     }

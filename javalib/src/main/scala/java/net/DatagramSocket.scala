@@ -2,25 +2,24 @@ package java.net
 
 import java.util.concurrent.locks.Lock
 
-class DatagramSocket private (
-    private[net] var impl : DatagramSocketImpl,
-    private[net] var address : InetAddress){
+class DatagramSocket private (private[net] var impl: DatagramSocketImpl,
+                              private[net] var address: InetAddress) {
 
   private final class Lock
   private val lock = new Lock
 
-  private[net] var port = -1
+  private[net] var port  = -1
   private[net] var bound = false
-  private var connected = false
-  private var closed    = false
+  private var connected  = false
+  private var closed     = false
 
-  def this(aPort : Int) = {
+  def this(aPort: Int) = {
     this(null, null)
     checkListen(aPort)
     createSocket(aPort, InetAddress.ANY)
   }
 
-  def this(aPort : Int, addr : InetAddress) = {
+  def this(aPort: Int, addr: InetAddress) = {
     this(null, null)
     checkListen(aPort)
     createSocket(aPort, if (addr == null) InetAddress.ANY else addr)
@@ -28,23 +27,24 @@ class DatagramSocket private (
 
   def this() = this(0)
 
-  private[net] def checkListen(aPort : Int) : Unit = {
+  private[net] def checkListen(aPort: Int): Unit = {
     if (aPort < 0 || aPort > 65535) {
       throw new IllegalArgumentException(s"Port out of range: $aPort")
     }
   }
 
-  def close() : Unit = {
+  def close(): Unit = {
     closed = true
     impl.close()
   }
 
-  def connect(anAddress : InetAddress, aPort : Int) : Unit = {
+  def connect(anAddress: InetAddress, aPort: Int): Unit = {
     if (anAddress == null || aPort < 0 || aPort > 655535) {
-      throw new IllegalArgumentException(s"Address is null or port $aPort is not within range.")
+      throw new IllegalArgumentException(
+        s"Address is null or port $aPort is not within range.")
     }
 
-    lock.synchronized{
+    lock.synchronized {
       if (isClosed()) {
         return
       }
@@ -52,13 +52,13 @@ class DatagramSocket private (
       try {
         checkClosedAndBind(true)
       } catch {
-        case e : SocketException => // Ignored
+        case e: SocketException => // Ignored
       }
 
       try {
         impl.connect(anAddress, aPort)
       } catch {
-        case e : SocketException => // not connected at the native level just do what we did before
+        case e: SocketException => // not connected at the native level just do what we did before
       }
 
       address = anAddress
@@ -67,7 +67,7 @@ class DatagramSocket private (
     }
   }
 
-  def disconnect() : Unit = {
+  def disconnect(): Unit = {
     if (isClosed() || !isConnected()) {
       return
     }
@@ -78,23 +78,24 @@ class DatagramSocket private (
     connected = false
   }
 
-  private[net] def createSocket(aPort : Int, addr : InetAddress) : Unit = synchronized {
-    impl = new PlainDatagramSocketImpl()
-    impl.create()
+  private[net] def createSocket(aPort: Int, addr: InetAddress): Unit =
+    synchronized {
+      impl = new PlainDatagramSocketImpl()
+      impl.create()
 
-    try{
-      impl.bind(aPort, addr)
-      bound = true
-    } catch {
-      case e : SocketException =>
-        close()
-        throw e
+      try {
+        impl.bind(aPort, addr)
+        bound = true
+      } catch {
+        case e: SocketException =>
+          close()
+          throw e
+      }
     }
-  }
 
-  def getInetAddress() : InetAddress = address
+  def getInetAddress(): InetAddress = address
 
-  def getLocalAddress() : InetAddress = {
+  def getLocalAddress(): InetAddress = {
     if (isClosed()) {
       return null
     }
@@ -106,7 +107,7 @@ class DatagramSocket private (
     impl.getLocalAddress()
   }
 
-  def getLocalPort() : Int = {
+  def getLocalPort(): Int = {
     if (isClosed()) {
       return -1
     }
@@ -118,31 +119,31 @@ class DatagramSocket private (
     impl.getLocalPort()
   }
 
-  def getPort() : Int = port
+  def getPort(): Int = port
 
-  private[net] def isMulticastSocket() : Boolean = false
+  private[net] def isMulticastSocket(): Boolean = false
 
-  def getReceiveBufferSize() : Int = synchronized {
+  def getReceiveBufferSize(): Int = synchronized {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.SO_RCVBUF).asInstanceOf[Int]
   }
 
-  def  getSendBufferSize() : Int = synchronized {
+  def getSendBufferSize(): Int = synchronized {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.SO_SNDBUF).asInstanceOf[Int]
   }
 
-  def getSoTimeout() : Int = synchronized {
+  def getSoTimeout(): Int = synchronized {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.SO_TIMEOUT).asInstanceOf[Int]
   }
 
-  def receive(pack : DatagramPacket) : Unit = synchronized {
+  def receive(pack: DatagramPacket): Unit = synchronized {
     checkClosedAndBind(true)
 
-    var senderAddr : InetAddress = null;
-    var senderPort = -1;
-    var tempPack = new DatagramPacket(Array.fill[Byte](1)(0), 1)
+    var senderAddr: InetAddress = null;
+    var senderPort              = -1;
+    var tempPack                = new DatagramPacket(Array.fill[Byte](1)(0), 1)
 
     var copy = false
 
@@ -159,10 +160,11 @@ class DatagramSocket private (
           senderPort = impl.peekData(tempPack)
           senderAddr = tempPack.getAddress()
         } catch {
-          case e : SocketException => {
+          case e: SocketException => {
             if (e.getMessage() == "The Socket does not support the operation") {
-              tempPack = new DatagramPacket(Array.fill[Byte](pack.getCapacity())(0),
-                                            pack.getCapacity())
+              tempPack =
+                new DatagramPacket(Array.fill[Byte](pack.getCapacity())(0),
+                                   pack.getCapacity())
               impl.receive(tempPack)
 
               senderAddr = tempPack.getAddress()
@@ -185,7 +187,11 @@ class DatagramSocket private (
     }
 
     if (copy) {
-      Array.copy(tempPack.getData(), 0, pack.getData(), pack.getOffset(), tempPack.getLength())
+      Array.copy(tempPack.getData(),
+                 0,
+                 pack.getData(),
+                 pack.getOffset(),
+                 tempPack.getLength())
 
       pack.setLengthOnly(tempPack.getLength())
       pack.setAddress(tempPack.getAddress())
@@ -196,14 +202,15 @@ class DatagramSocket private (
     }
   }
 
-  def send(pack : DatagramPacket) : Unit = {
+  def send(pack: DatagramPacket): Unit = {
     checkClosedAndBind(true)
 
     val packAddr = pack.getAddress()
     if (address != null) {
       if (pack != null) {
-        if (address != packAddr || port != pack.getPort()){
-          throw new IllegalArgumentException("Packet address mismatch with connected address")
+        if (address != packAddr || port != pack.getPort()) {
+          throw new IllegalArgumentException(
+            "Packet address mismatch with connected address")
         }
       } else {
         pack.setAddress(address)
@@ -218,7 +225,7 @@ class DatagramSocket private (
     impl.send(pack)
   }
 
-  def setSendBufferSize(size : Int) : Unit = synchronized {
+  def setSendBufferSize(size: Int): Unit = synchronized {
     if (size < 1) {
       throw new IllegalArgumentException("Zero or negative buffer size")
     }
@@ -227,7 +234,7 @@ class DatagramSocket private (
     impl.setOption(SocketOptions.SO_SNDBUF, Int.box(size))
   }
 
-  def setReceiveBufferSize(size : Int) : Unit = synchronized {
+  def setReceiveBufferSize(size: Int): Unit = synchronized {
     if (size < 1) {
       throw new IllegalArgumentException("Zero or negative buffer size")
     }
@@ -236,7 +243,7 @@ class DatagramSocket private (
     impl.setOption(SocketOptions.SO_RCVBUF, Int.box(size))
   }
 
-  def setSoTimeout(timeout : Int) : Unit = synchronized {
+  def setSoTimeout(timeout: Int): Unit = synchronized {
     if (timeout < 0) {
       throw new IllegalArgumentException("Invalid negative timeout")
     }
@@ -245,23 +252,24 @@ class DatagramSocket private (
     impl.setOption(SocketOptions.SO_TIMEOUT, Int.box(timeout))
   }
 
-  protected[net] def this(socketImpl : DatagramSocketImpl) = {
+  protected[net] def this(socketImpl: DatagramSocketImpl) = {
     this(socketImpl, null)
     if (socketImpl == null) {
       throw new NullPointerException()
     }
   }
 
-  def this(localAddr : SocketAddress) = {
+  def this(localAddr: SocketAddress) = {
     this(null, null)
     if (localAddr != null) {
-      if (!localAddr.isInstanceOf[InetSocketAddress]){
+      if (!localAddr.isInstanceOf[InetSocketAddress]) {
         val socketClass = localAddr.getClass()
-        throw new IllegalArgumentException(s"SocketAddress $socketClass not supported")
+        throw new IllegalArgumentException(
+          s"SocketAddress $socketClass not supported")
       }
       checkListen(localAddr.asInstanceOf[InetSocketAddress].getPort)
     }
-    
+
     impl = new PlainDatagramSocketImpl()
     impl.create()
 
@@ -269,7 +277,7 @@ class DatagramSocket private (
       try {
         bind(localAddr)
       } catch {
-        case e : SocketException =>
+        case e: SocketException =>
           close()
           throw e
       }
@@ -278,26 +286,27 @@ class DatagramSocket private (
     setBroadcast(true)
   }
 
-  private[net] def checkClosedAndBind(bind : Boolean) : Unit = {
+  private[net] def checkClosedAndBind(bind: Boolean): Unit = {
     if (isClosed()) {
       throw new SocketException("Socket is closed")
     }
-    if (bind && !isBound()){
+    if (bind && !isBound()) {
       checkListen(0)
       impl.bind(0, InetAddress.ANY)
       bound = true
     }
   }
 
-  def bind(localAddr : SocketAddress) : Unit = {
+  def bind(localAddr: SocketAddress): Unit = {
     checkClosedAndBind(false)
-    var localPort = 0
-    var addr : InetAddress = InetAddress.ANY
+    var localPort         = 0
+    var addr: InetAddress = InetAddress.ANY
 
-    if (localAddr != null){
+    if (localAddr != null) {
       if (!localAddr.isInstanceOf[InetSocketAddress]) {
         val socketClass = localAddr.getClass()
-        throw new IllegalArgumentException(s"SocketAddress $socketClass not supported")
+        throw new IllegalArgumentException(
+          s"SocketAddress $socketClass not supported")
       }
       val inetAddr = localAddr.asInstanceOf[InetSocketAddress]
       addr = inetAddr.getAddress
@@ -312,14 +321,15 @@ class DatagramSocket private (
     bound = true
   }
 
-  def connect(remoteAddr : SocketAddress) : Unit = {
+  def connect(remoteAddr: SocketAddress): Unit = {
     if (remoteAddr == null) {
       throw new IllegalArgumentException("SocketAddress is null")
     }
 
     if (!remoteAddr.isInstanceOf[InetSocketAddress]) {
       val socketClass = remoteAddr.getClass()
-      throw new IllegalArgumentException(s"SocketAddress $socketClass not supported")
+      throw new IllegalArgumentException(
+        s"SocketAddress $socketClass not supported")
     }
 
     val inetAddr = remoteAddr.asInstanceOf[InetSocketAddress]
@@ -334,8 +344,8 @@ class DatagramSocket private (
       try {
         impl.connect(inetAddr.getAddress, inetAddr.getPort)
       } catch {
-        case e : ConnectException => throw(e)
-        case e : Exception => // Not connected at the native level just do what we did before
+        case e: ConnectException => throw (e)
+        case e: Exception        => // Not connected at the native level just do what we did before
       }
 
       address = inetAddr.getAddress
@@ -344,39 +354,41 @@ class DatagramSocket private (
     }
   }
 
-  def isBound() : Boolean = bound
+  def isBound(): Boolean = bound
 
-  def isConnected() : Boolean = connected
+  def isConnected(): Boolean = connected
 
-  def getRemoteSocketAddress() : SocketAddress = {
-    return if (!isConnected()) null else new InetSocketAddress(getInetAddress(), getPort())
-  }
-  
-  def getLocalSocketAddress() : SocketAddress = {
-    return if (!isBound()) null else new InetSocketAddress(getLocalAddress(), getLocalPort())
+  def getRemoteSocketAddress(): SocketAddress = {
+    return if (!isConnected()) null
+    else new InetSocketAddress(getInetAddress(), getPort())
   }
 
-  def setReuseAddress(reuse : Boolean) : Unit = {
+  def getLocalSocketAddress(): SocketAddress = {
+    return if (!isBound()) null
+    else new InetSocketAddress(getLocalAddress(), getLocalPort())
+  }
+
+  def setReuseAddress(reuse: Boolean): Unit = {
     checkClosedAndBind(false)
     impl.setOption(SocketOptions.SO_REUSEADDR, Boolean.box(reuse))
   }
 
-  def getReuseAddress() : Boolean = {
+  def getReuseAddress(): Boolean = {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.SO_REUSEADDR).asInstanceOf[Boolean]
   }
 
-  def setBroadcast(broadcast : Boolean) : Unit = {
+  def setBroadcast(broadcast: Boolean): Unit = {
     checkClosedAndBind(false)
     impl.setOption(SocketOptions.SO_BROADCAST, Boolean.box(broadcast))
   }
 
-  def getBroadcast() : Boolean = {
+  def getBroadcast(): Boolean = {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.SO_BROADCAST).asInstanceOf[Boolean]
   }
 
-  def setTrafficClass(value : Int) : Unit = {
+  def setTrafficClass(value: Int): Unit = {
     checkClosedAndBind(false)
     if (value < 0 || value > 255) {
       throw new IllegalArgumentException()
@@ -384,10 +396,10 @@ class DatagramSocket private (
     impl.setOption(SocketOptions.IP_TOS, Int.box(value))
   }
 
-  def getTrafficClass() : Int = {
+  def getTrafficClass(): Int = {
     checkClosedAndBind(false)
     impl.getOption(SocketOptions.IP_TOS).asInstanceOf[Int]
   }
-  
-  def isClosed() : Boolean = closed
+
+  def isClosed(): Boolean = closed
 }
