@@ -2,6 +2,8 @@ package java.net
 
 import java.util.concurrent.locks.Lock
 
+// Ported from Apache Harmony
+
 class DatagramSocket private (private[net] var impl: DatagramSocketImpl,
                               private[net] var address: InetAddress) {
 

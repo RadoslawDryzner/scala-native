@@ -2,6 +2,8 @@ package java.net
 
 import collection.JavaConverters._
 
+// Ported from Apache Harmony
+
 object NetworkInterfaceSuite extends tests.Suite {
   var theInterfaces: Iterator[NetworkInterface] = null
   var atLeastOneInterface                       = false

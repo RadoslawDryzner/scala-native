@@ -2,6 +2,8 @@ package java.net
 
 import collection.JavaConverters._
 
+// Ported from Apache Harmony
+
 object InterfaceAddressSuite extends tests.Suite {
   private var interfaceAddr: InterfaceAddress        = null
   private var anotherInterfaceAddr: InterfaceAddress = null

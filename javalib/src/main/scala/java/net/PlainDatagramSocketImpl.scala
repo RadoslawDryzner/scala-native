@@ -22,6 +22,8 @@ import scala.scalanative.posix.sys.selectOps._
 import scala.scalanative.posix.unistd.{close => cClose}
 import scala.scalanative.posix.arpa.inet
 
+// Ported from Apache Harmony
+
 class PlainDatagramSocketImpl extends DatagramSocketImpl {
   import PlainDatagramSocketImpl._
 

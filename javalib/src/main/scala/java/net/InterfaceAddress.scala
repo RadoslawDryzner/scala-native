@@ -1,5 +1,7 @@
 package java.net
 
+// Ported from Apache Harmony
+
 class InterfaceAddress(private val addr: InetAddress, prefixLength: Short)
     extends Object {
   private val mask: InetAddress           = calSubnetMask()

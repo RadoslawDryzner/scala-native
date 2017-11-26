@@ -4,6 +4,8 @@ import java.io.IOException
 import java.io.InterruptedIOException
 import java.util.Date
 
+// Ported from Apache Harmony
+
 object DatagramSocketSuite extends tests.Suite {
   val ds: DatagramSocket   = null
   val dp: DatagramPacket   = null

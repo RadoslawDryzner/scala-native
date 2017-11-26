@@ -1,5 +1,7 @@
 package java.net
 
+// Ported from Apache Harmony
+
 object DatagramPacketSuite extends tests.Suite {
   test("constructor Array[Byte], Int") {
     var dp = new DatagramPacket("Hello".getBytes(), 5)

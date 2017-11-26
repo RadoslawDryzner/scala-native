@@ -7,6 +7,8 @@ import scala.scalanative.posix.sys.socketOps._
 import scala.scalanative.posix.netinet.in
 import scala.scalanative.posix.netinet.inOps._
 
+// Ported from Apache Harmony
+
 abstract class DatagramSocketImpl extends SocketOptions {
   protected[net] var fd: FileDescriptor = null
   protected[net] var localPort: Int     = -1

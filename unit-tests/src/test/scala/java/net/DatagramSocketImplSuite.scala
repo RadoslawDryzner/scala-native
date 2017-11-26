@@ -1,5 +1,7 @@
 package java.net
 
+// Ported from Apache Harmony
+
 object DatagramSocketImplSuite extends tests.Suite {
   test("constructor") {
     val impl = new MockDatagramSocketImpl()

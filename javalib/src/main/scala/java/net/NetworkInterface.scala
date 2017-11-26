@@ -18,6 +18,8 @@ import scalanative.posix.netinet.inOps._
 
 import java.util.Enumeration
 
+// Ported from Apache Harmony
+
 final class NetworkInterface private (name: String,
                                       displayName: String,
                                       interfaceIndex: Int)
