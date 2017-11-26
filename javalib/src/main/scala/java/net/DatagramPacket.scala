@@ -1,5 +1,7 @@
 package java.net
 
+// Ported from Apache Harmony
+
 final class DatagramPacket(private[net] var data: Array[Byte],
                            private[net] var offset: Int = 0,
                            private[net] var length: Int) {
