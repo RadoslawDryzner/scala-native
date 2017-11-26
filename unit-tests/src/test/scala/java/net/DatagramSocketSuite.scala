@@ -5,12 +5,12 @@ import java.io.InterruptedIOException
 import java.util.Date
 
 object DatagramSocketSuite extends tests.Suite {
-  val ds : DatagramSocket = null
-  val dp : DatagramPacket = null
-  val sds : DatagramSocket = null
-  var retval : String = null
-  val testString : String = "Test String"
-  val interrupted : Boolean = false
+  val ds: DatagramSocket   = null
+  val dp: DatagramPacket   = null
+  val sds: DatagramSocket  = null
+  var retval: String       = null
+  val testString: String   = "Test String"
+  val interrupted: Boolean = false
 
   test("constructor") {
     new DatagramSocket()
@@ -29,7 +29,10 @@ object DatagramSocketSuite extends tests.Suite {
 
   test("close") {
     val ds = new DatagramSocket(0)
-    val dp = new DatagramPacket("Test string".getBytes(), 11, InetAddress.getLocalHost(), 0)
+    val dp = new DatagramPacket("Test string".getBytes(),
+                                11,
+                                InetAddress.getLocalHost(),
+                                0)
     ds.close()
     assertThrows[SocketException] {
       ds.send(dp)
@@ -37,7 +40,7 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("connect InetAddress, Int") {
-    var ds = new DatagramSocket()
+    var ds          = new DatagramSocket()
     var inetAddress = InetAddress.getLocalHost()
     ds.connect(inetAddress, 0)
     assertEquals(inetAddress, ds.getInetAddress())
@@ -49,7 +52,8 @@ object DatagramSocketSuite extends tests.Suite {
       ds = new DatagramSocket()
       val port = ds.getLocalPort()
       ds.connect(localHost, port)
-      val send = new DatagramPacket(Array.fill[Byte](10)(0), 10, localHost, port)
+      val send =
+        new DatagramPacket(Array.fill[Byte](10)(0), 10, localHost, port)
       ds.send(send)
       val receive = new DatagramPacket(Array.fill[Byte](20)(0), 20)
       ds.setSoTimeout(10000)
@@ -70,7 +74,10 @@ object DatagramSocketSuite extends tests.Suite {
       inetAddress = InetAddress.getLocalHost()
       portNumber = ds.getLocalPort()
       ds.connect(inetAddress, portNumber)
-      val send = new DatagramPacket(Array.fill[Byte](10)(0), 10, inetAddress, portNumber + 1)
+      val send = new DatagramPacket(Array.fill[Byte](10)(0),
+                                    10,
+                                    inetAddress,
+                                    portNumber + 1)
       ds.send(send)
       ds.close()
     }
@@ -83,7 +90,7 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("disconnect") {
-    val ds = new DatagramSocket()
+    val ds          = new DatagramSocket()
     val inetAddress = InetAddress.getLocalHost()
     ds.connect(inetAddress, 0)
     ds.disconnect()
@@ -91,14 +98,15 @@ object DatagramSocketSuite extends tests.Suite {
     assertEquals(-1, ds.getPort())
   }
 
-  test("getInetAddress") {
-  }
+  test("getInetAddress") {}
 
   test("getLocalAddress") {
-    val local : InetAddress = InetAddress.getLocalHost()
-    val portNumber = 0
-    val ds = new DatagramSocket(portNumber, local)
-    assertEquals(InetAddress.getByName(InetAddress.getLocalHost().getHostName()), ds.getLocalAddress())
+    val local: InetAddress = InetAddress.getLocalHost()
+    val portNumber         = 0
+    val ds                 = new DatagramSocket(portNumber, local)
+    assertEquals(
+      InetAddress.getByName(InetAddress.getLocalHost().getHostName()),
+      ds.getLocalAddress())
   }
 
   test("getLocalPort") {
@@ -134,28 +142,28 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("receive DatagramPacket") {
-    val localHost = InetAddress.getLocalHost()
+    val localHost  = InetAddress.getLocalHost()
     val portNumber = 49154
-    val sds = new DatagramSocket(49153)
-    var ds = new DatagramSocket(portNumber)
-    val sdp = new DatagramPacket("Test String".getBytes(), 11, localHost, 49154)
+    val sds        = new DatagramSocket(49153)
+    var ds         = new DatagramSocket(portNumber)
+    val sdp        = new DatagramPacket("Test String".getBytes(), 11, localHost, 49154)
     sds.send(sdp)
     sds.close()
     ds.setSoTimeout(6000)
     val rbuf = Array.fill[Byte](1000)(0)
-    val rdp = new DatagramPacket(rbuf, rbuf.length)
+    val rdp  = new DatagramPacket(rbuf, rbuf.length)
     ds.receive(rdp)
     ds.close()
     assertEquals(new String(rbuf, 0, 11), "Test String")
 
     ds = new DatagramSocket()
     ds.setSoTimeout(500)
-    val start = new Date()
+    val start       = new Date()
     var interrupted = false
     try {
       ds.receive(new DatagramPacket(Array.fill[Byte](1)(0), 1))
     } catch {
-      case e : InterruptedIOException => interrupted = true
+      case e: InterruptedIOException => interrupted = true
     }
     assert(interrupted)
     val delay = (new Date().getTime() - start.getTime()).toInt
@@ -163,16 +171,16 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("receive oversize DatagramPacket") {
-    val localHost = InetAddress.getLocalHost()
+    val localHost  = InetAddress.getLocalHost()
     val portNumber = 49154
-    val sds = new DatagramSocket(49153)
-    val ds = new DatagramSocket(portNumber)
-    val sdp = new DatagramPacket("0123456789".getBytes(), 10, localHost, 49154)
+    val sds        = new DatagramSocket(49153)
+    val ds         = new DatagramSocket(portNumber)
+    val sdp        = new DatagramPacket("0123456789".getBytes(), 10, localHost, 49154)
     sds.send(sdp)
     sds.close()
     ds.setSoTimeout(6000)
     val rbuf = Array.fill[Byte](5)(0)
-    val rdp = new DatagramPacket(rbuf, rbuf.length)
+    val rdp  = new DatagramPacket(rbuf, rbuf.length)
     ds.receive(rdp)
     ds.close()
     assertEquals(new String(rbuf, 0, 5), "01234")
@@ -188,10 +196,10 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("send DatagramPacket 2") {
-    val udpPort = 20000
-    val sendPort = 23000
-    val udpSocket = new DatagramSocket(udpPort)
-    val data = Array[Byte](65)
+    val udpPort    = 20000
+    val sendPort   = 23000
+    val udpSocket  = new DatagramSocket(udpPort)
+    val data       = Array[Byte](65)
     val sendPacket = new DatagramPacket(data, data.length, null, sendPort)
     assertThrows[NullPointerException] {
       udpSocket.send(sendPacket)
@@ -201,7 +209,7 @@ object DatagramSocketSuite extends tests.Suite {
 
   test("setSendBufferSize Int") {
     val portNumber = 49153
-    val ds = new DatagramSocket(portNumber)
+    val ds         = new DatagramSocket(portNumber)
     ds.setSendBufferSize(134)
     assert(ds.getSendBufferSize() >= 134)
     ds.close()
@@ -209,7 +217,7 @@ object DatagramSocketSuite extends tests.Suite {
 
   test("setReceiveBufferSize Int") {
     val portNumber = 49153
-    val ds = new DatagramSocket(portNumber)
+    val ds         = new DatagramSocket(portNumber)
     ds.setReceiveBufferSize(130)
     assert(ds.getReceiveBufferSize() >= 130)
     ds.close()
@@ -223,7 +231,7 @@ object DatagramSocketSuite extends tests.Suite {
 
   test("constructor DatagramSocketImpl") {
     assertThrows[NullPointerException] {
-      val impl : DatagramSocketImpl = null
+      val impl: DatagramSocketImpl = null
       new DatagramSocket(impl)
     }
   }
@@ -231,14 +239,15 @@ object DatagramSocketSuite extends tests.Suite {
   test("constructor SocketAddress") {
     class UnsupportedSocketAddress extends SocketAddress
 
-    var ds = new DatagramSocket(new InetSocketAddress(InetAddress.getLocalHost(), 0))
+    var ds =
+      new DatagramSocket(new InetSocketAddress(InetAddress.getLocalHost(), 0))
     assert(ds.getBroadcast())
     assert(ds.getLocalPort() != 0)
     assertEquals(InetAddress.getLocalHost(), ds.getLocalAddress())
     assertThrows[IllegalArgumentException] {
       ds = new DatagramSocket(new UnsupportedSocketAddress())
     }
-    val sockAddr : SocketAddress = null
+    val sockAddr: SocketAddress = null
     ds = new DatagramSocket(sockAddr)
     assert(ds.getBroadcast())
   }
@@ -247,11 +256,13 @@ object DatagramSocketSuite extends tests.Suite {
     class mySocketAddress extends SocketAddress
 
     val portNumber = 49153
-    var theSocket = new DatagramSocket(new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
-    assertEquals(theSocket.getLocalSocketAddress(), new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
+    var theSocket = new DatagramSocket(
+      new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
+    assertEquals(theSocket.getLocalSocketAddress(),
+                 new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
     theSocket.close()
 
-    val sockAddr : SocketAddress = null
+    val sockAddr: SocketAddress = null
     theSocket = new DatagramSocket(sockAddr)
     theSocket.bind(sockAddr)
     assert(theSocket.getLocalSocketAddress() != null)
@@ -259,7 +270,9 @@ object DatagramSocketSuite extends tests.Suite {
 
     theSocket = new DatagramSocket(sockAddr)
     assertThrows[BindException] {
-      theSocket.bind(new InetSocketAddress(InetAddress.getByAddress(Array[Byte](1, 0, 0, 0)), 49153))
+      theSocket.bind(
+        new InetSocketAddress(InetAddress.getByAddress(Array[Byte](1, 0, 0, 0)),
+                              49153))
     }
     theSocket.close()
 
@@ -281,13 +294,14 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("connect SocketAddress") {
-    var ds : DatagramSocket = null
+    var ds: DatagramSocket = null
     assertThrows[PortUnreachableException] {
       val localHost = InetAddress.getLocalHost()
       ds = new DatagramSocket()
       val port = 49153
       ds.connect(new InetSocketAddress(localHost, port))
-      val send = new DatagramPacket(Array.fill[Byte](10)(0), 10, localHost, port)
+      val send =
+        new DatagramPacket(Array.fill[Byte](10)(0), 10, localHost, port)
       ds.send(send)
       val receive = new DatagramPacket(Array.fill[Byte](20)(0), 20)
       ds.setSoTimeout(10000)
@@ -297,7 +311,7 @@ object DatagramSocketSuite extends tests.Suite {
 
     ds = new DatagramSocket()
     val inetAddress = InetAddress.getLocalHost()
-    val portNumber = 49153
+    val portNumber  = 49153
     ds.connect(new InetSocketAddress(inetAddress, portNumber))
     ds.disconnect()
     ds.close()
@@ -305,9 +319,12 @@ object DatagramSocketSuite extends tests.Suite {
     assertThrows[IllegalArgumentException] {
       ds = new DatagramSocket()
       val inetAddress = InetAddress.getLocalHost()
-      val portNumber = 49153
+      val portNumber  = 49153
       ds.connect(new InetSocketAddress(inetAddress, portNumber))
-      val senddp = new DatagramPacket(Array.fill[Byte](10)(0), 10, inetAddress, portNumber + 1)
+      val senddp = new DatagramPacket(Array.fill[Byte](10)(0),
+                                      10,
+                                      inetAddress,
+                                      portNumber + 1)
       ds.send(senddp)
       ds.close()
     }
@@ -315,20 +332,23 @@ object DatagramSocketSuite extends tests.Suite {
     assertThrows[IllegalArgumentException] {
       ds = new DatagramSocket()
       val addressBytes = Array[Byte](0, 0, 0, 0)
-      val inetAddress = InetAddress.getByAddress(addressBytes)
-      val portNumber = 49153
-      val localHostIA = InetAddress.getLocalHost()
+      val inetAddress  = InetAddress.getByAddress(addressBytes)
+      val portNumber   = 49153
+      val localHostIA  = InetAddress.getLocalHost()
       ds.connect(new InetSocketAddress(inetAddress, portNumber))
       assert(ds.isConnected())
       val sendBytesArray = Array[Byte]('T', 'e', 's', 't', 0)
-      val senddp = new DatagramPacket(sendBytesArray, sendBytesArray.length, localHostIA, portNumber)
+      val senddp = new DatagramPacket(sendBytesArray,
+                                      sendBytesArray.length,
+                                      localHostIA,
+                                      portNumber)
       ds.send(senddp)
       ds.close()
     }
   }
 
   test("isBound") {
-    val addr = InetAddress.getLocalHost()
+    val addr      = InetAddress.getLocalHost()
     var theSocket = new DatagramSocket(49153)
     assert(theSocket.isBound())
     theSocket.close()
@@ -337,7 +357,7 @@ object DatagramSocketSuite extends tests.Suite {
     assert(theSocket.isBound())
     theSocket.close()
 
-    val sockAddr : SocketAddress = null
+    val sockAddr: SocketAddress = null
     theSocket = new DatagramSocket(sockAddr)
     assert(!theSocket.isBound())
     theSocket.close()
@@ -347,7 +367,8 @@ object DatagramSocketSuite extends tests.Suite {
     assert(theSocket.isBound())
     theSocket.close()
 
-    val theLocalAddress = new InetSocketAddress(InetAddress.getLocalHost(), 49155)
+    val theLocalAddress =
+      new InetSocketAddress(InetAddress.getLocalHost(), 49155)
     theSocket = new DatagramSocket(sockAddr)
     assert(!theSocket.isBound())
     theSocket.bind(theLocalAddress)
@@ -357,7 +378,7 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("isConnected") {
-    val addr = InetAddress.getLocalHost()
+    val addr      = InetAddress.getLocalHost()
     var theSocket = new DatagramSocket(49154)
     assert(!theSocket.isConnected())
     theSocket.connect(new InetSocketAddress(addr, 49153))
@@ -377,45 +398,53 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("getRemoteSocketAddress") {
-    val sport = 49153
+    val sport      = 49153
     var portNumber = 49154
-    val s = new DatagramSocket(new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
+    val s = new DatagramSocket(
+      new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
     s.connect(new InetSocketAddress(InetAddress.getLocalHost(), sport))
-    assertEquals(s.getRemoteSocketAddress, new InetSocketAddress(InetAddress.getLocalHost(), sport))
+    assertEquals(s.getRemoteSocketAddress,
+                 new InetSocketAddress(InetAddress.getLocalHost(), sport))
     s.close()
 
-    val sockAddr : SocketAddress = null
-    val theSocket = new DatagramSocket(sockAddr)
+    val sockAddr: SocketAddress = null
+    val theSocket               = new DatagramSocket(sockAddr)
     portNumber = 49155
-    theSocket.bind(new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
+    theSocket.bind(
+      new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
     assert(theSocket.getRemoteSocketAddress() == null)
 
     theSocket.connect(new InetSocketAddress(InetAddress.getLocalHost(), sport))
-    assertEquals(theSocket.getRemoteSocketAddress(), new InetSocketAddress(InetAddress.getLocalHost(), sport))
+    assertEquals(theSocket.getRemoteSocketAddress(),
+                 new InetSocketAddress(InetAddress.getLocalHost(), sport))
     theSocket.close()
   }
 
   test("getLocalSocketAddress") {
     var portNumber = 49153
-    var s = new DatagramSocket(new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
-    assertEquals(s.getLocalSocketAddress(), new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
+    var s = new DatagramSocket(
+      new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
+    assertEquals(s.getLocalSocketAddress(),
+                 new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
     s.close()
 
-    val sockAddr : SocketAddress = null
-    val theSocket = new DatagramSocket(sockAddr)
+    val sockAddr: SocketAddress = null
+    val theSocket               = new DatagramSocket(sockAddr)
     assert(theSocket.getLocalSocketAddress() == null)
 
     portNumber = 49154
-    theSocket.bind(new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
-    assertEquals(theSocket.getLocalSocketAddress(), new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
+    theSocket.bind(
+      new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
+    assertEquals(theSocket.getLocalSocketAddress(),
+                 new InetSocketAddress(InetAddress.getLocalHost(), portNumber))
     theSocket.close()
   }
 
   test("setReuseAddress Boolean") {
-    var theSocket1 : DatagramSocket = null
-    var theSocket2 : DatagramSocket = null
+    var theSocket1: DatagramSocket = null
+    var theSocket2: DatagramSocket = null
 
-    val sockAddr : SocketAddress = null
+    val sockAddr: SocketAddress = null
     assertThrows[BindException] {
       val theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 49153)
       theSocket1 = new DatagramSocket(sockAddr)
@@ -461,11 +490,13 @@ object DatagramSocketSuite extends tests.Suite {
     val theBytes = Array[Byte](-1, -1, -1, -1)
 
     assertThrows[ConnectException] {
-      theSocket.connect(new InetSocketAddress(InetAddress.getByAddress(theBytes), 49154))
+      theSocket.connect(
+        new InetSocketAddress(InetAddress.getByAddress(theBytes), 49154))
     }
-    
+
     theSocket.setBroadcast(true)
-    theSocket.connect(new InetSocketAddress(InetAddress.getByAddress(theBytes), 49155))
+    theSocket.connect(
+      new InetSocketAddress(InetAddress.getByAddress(theBytes), 49155))
     theSocket.close()
   }
 
@@ -478,13 +509,13 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("setTrafficClass Int") {
-    val IPTOS_LOWCOST = 0x2
+    val IPTOS_LOWCOST     = 0x2
     val IPTOS_RELIABILITY = 0x4
-    val IPTOS_THROUGHPUT = 0x8
-    val IPTOS_LOWDELAY = 0x10
+    val IPTOS_THROUGHPUT  = 0x8
+    val IPTOS_LOWDELAY    = 0x10
 
     val theSocket = new DatagramSocket(49153)
-    
+
     assertThrows[IllegalArgumentException] {
       theSocket.setTrafficClass(256)
     }
@@ -499,10 +530,10 @@ object DatagramSocketSuite extends tests.Suite {
   }
 
   test("getTrafficClass") {
-    val IPTOS_LOWCOST = 0x2
+    val IPTOS_LOWCOST     = 0x2
     val IPTOS_RELIABILITY = 0x4
-    val IPTOS_THROUGHPUT = 0x8
-    val IPTOS_LOWDELAY = 0x10
+    val IPTOS_THROUGHPUT  = 0x8
+    val IPTOS_LOWDELAY    = 0x10
 
     val theSocket = new DatagramSocket(49153)
     theSocket.setTrafficClass(IPTOS_LOWCOST)

@@ -553,7 +553,7 @@ private[net] trait InetAddressBase {
 
   def ANY = new Inet4Address(Array[Byte](0, 0, 0, 0))
 
-  def getLocalHost() : InetAddress = {
+  def getLocalHost(): InetAddress = {
     val host = Zone { implicit z =>
       val buffer = alloc[Byte](64)
       if (unistd.gethostname(buffer, 64) != 0) {

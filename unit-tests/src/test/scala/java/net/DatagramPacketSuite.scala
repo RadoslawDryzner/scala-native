@@ -21,7 +21,11 @@ object DatagramPacketSuite extends tests.Suite {
   }
 
   test("constructor Array[Byte], Int, Int, InetAddress, Int") {
-    val dp = new DatagramPacket("Hello".getBytes(), 2, 3, InetAddress.getLocalHost(), 0)
+    val dp = new DatagramPacket("Hello".getBytes(),
+                                2,
+                                3,
+                                InetAddress.getLocalHost(),
+                                0)
     assertEquals(InetAddress.getLocalHost(), dp.getAddress())
     assertEquals(0, dp.getPort())
     assertEquals(3, dp.getLength())
@@ -29,14 +33,16 @@ object DatagramPacketSuite extends tests.Suite {
   }
 
   test("constructor Array[Byte], Int, InetAddress, Int") {
-    val dp = new DatagramPacket("Hello".getBytes(), 5, InetAddress.getLocalHost(), 0)
+    val dp =
+      new DatagramPacket("Hello".getBytes(), 5, InetAddress.getLocalHost(), 0)
     assertEquals(InetAddress.getLocalHost(), dp.getAddress())
     assertEquals(0, dp.getPort())
     assertEquals(5, dp.getLength())
   }
 
   test("getAddress") {
-    val dp = new DatagramPacket("Hello".getBytes(), 5, InetAddress.getLocalHost(), 0)
+    val dp =
+      new DatagramPacket("Hello".getBytes(), 5, InetAddress.getLocalHost(), 0)
     assertEquals(InetAddress.getLocalHost(), dp.getAddress())
   }
 
@@ -56,13 +62,17 @@ object DatagramPacketSuite extends tests.Suite {
   }
 
   test("getPort") {
-    val dp = new DatagramPacket("Hello".getBytes(), 5, InetAddress.getLocalHost(), 1000)
+    val dp = new DatagramPacket("Hello".getBytes(),
+                                5,
+                                InetAddress.getLocalHost(),
+                                1000)
     assertEquals(1000, dp.getPort())
   }
 
   test("setAddress") {
     val ia = InetAddress.getByName("127.0.0.1")
-    val dp = new DatagramPacket("Hello".getBytes(), 5, InetAddress.getLocalHost(), 0)
+    val dp =
+      new DatagramPacket("Hello".getBytes(), 5, InetAddress.getLocalHost(), 0)
     dp.setAddress(ia)
     assertEquals(ia, dp.getAddress())
   }
@@ -86,7 +96,10 @@ object DatagramPacketSuite extends tests.Suite {
   }
 
   test("setPort") {
-    val dp = new DatagramPacket("Hello".getBytes(), 5, InetAddress.getLocalHost(), 1000)
+    val dp = new DatagramPacket("Hello".getBytes(),
+                                5,
+                                InetAddress.getLocalHost(),
+                                1000)
     dp.setPort(2000)
     assertEquals(2000, dp.getPort())
   }
@@ -103,9 +116,11 @@ object DatagramPacketSuite extends tests.Suite {
     }
 
     val theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 2067)
-    val thePacket = new DatagramPacket(buf, 1, theAddress)
+    val thePacket  = new DatagramPacket(buf, 1, theAddress)
     assertEquals(theAddress, thePacket.getSocketAddress())
-    assertEquals(theAddress, new InetSocketAddress(thePacket.getAddress(), thePacket.getPort()))
+    assertEquals(
+      theAddress,
+      new InetSocketAddress(thePacket.getAddress(), thePacket.getPort()))
   }
 
   test("constructor Array[Byte], Int, SocketAddress") {
@@ -120,14 +135,16 @@ object DatagramPacketSuite extends tests.Suite {
     }
 
     val theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 2067)
-    val thePacket = new DatagramPacket(buf, 1, 1, theAddress)
+    val thePacket  = new DatagramPacket(buf, 1, 1, theAddress)
     assertEquals(theAddress, thePacket.getSocketAddress())
-    assertEquals(theAddress, new InetSocketAddress(thePacket.getAddress(), thePacket.getPort()))
+    assertEquals(
+      theAddress,
+      new InetSocketAddress(thePacket.getAddress(), thePacket.getPort()))
     assertEquals(1, thePacket.getOffset())
   }
 
   test("getSocketAddress") {
-    val buf = Array.fill[Byte](1)(0)
+    val buf       = Array.fill[Byte](1)(0)
     val thePacket = new DatagramPacket(buf, 1)
 
     val theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0)
@@ -137,7 +154,7 @@ object DatagramPacketSuite extends tests.Suite {
 
   test("setSocketAddress") {
     class UnsupportedSocketAddress extends SocketAddress {}
-    val buf = Array.fill[Byte](1)(0)
+    val buf       = Array.fill[Byte](1)(0)
     var thePacket = new DatagramPacket(buf, 1)
 
     assertThrows[IllegalArgumentException] {
@@ -153,6 +170,8 @@ object DatagramPacketSuite extends tests.Suite {
     thePacket = new DatagramPacket(buf, 1)
     thePacket.setSocketAddress(theAddress)
     assertEquals(theAddress, thePacket.getSocketAddress())
-    assertEquals(theAddress, new InetSocketAddress(thePacket.getAddress(), thePacket.getPort()))
+    assertEquals(
+      theAddress,
+      new InetSocketAddress(thePacket.getAddress(), thePacket.getPort()))
   }
 }
