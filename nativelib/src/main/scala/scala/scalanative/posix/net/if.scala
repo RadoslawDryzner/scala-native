@@ -9,15 +9,19 @@ import scalanative.posix.sys.socket
 object _if {
   type _16 = Nat.Digit[Nat._1, Nat._6]
 
-  type ifreq = CStruct1[CArray[CChar, _16]]
+  type ifreq = CStruct1[CArray[CChar, _16]] // ifr_name
 
-  type ifreq_hwaddr = CStruct2[CArray[CChar, _16], socket.sockaddr]
+  type ifreq_hwaddr = CStruct2[CArray[CChar, _16], // ifr_name
+                               socket.sockaddr]    // ifr_hwaddr
 
-  type ifreq_flags = CStruct2[CArray[CChar, _16], CShort]
+  type ifreq_flags = CStruct2[CArray[CChar, _16], // ifr_name
+                              CShort]             // ifr_flags
 
-  type ifreq_mtu = CStruct2[CArray[CChar, _16], CInt]
+  type ifreq_mtu = CStruct2[CArray[CChar, _16], // ifr_name
+                            CInt]               // ifr_mtu
 
-  type ifconf = CStruct2[CInt, Ptr[Byte]]
+  type ifconf = CStruct2[CInt,      // ifc_len
+                         Ptr[Byte]] // ifc_buf
 
   def if_nametoindex(ifname: CString): UInt = extern
 
