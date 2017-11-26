@@ -67,6 +67,18 @@ object DatagramPacketSuite extends tests.Suite {
                                 InetAddress.getLocalHost(),
                                 1000)
     assertEquals(1000, dp.getPort())
+
+    val localhost = InetAddress.getLocalHost()
+    val socket    = new DatagramSocket(0, localhost)
+    val port      = socket.getLocalPort()
+
+    socket.setSoTimeout(3000)
+    val packet =
+      new DatagramPacket(Array[Byte](1, 2, 3, 4, 5, 6), 6, localhost, port)
+    socket.send(packet)
+    socket.receive(packet)
+    socket.close()
+    assertEquals(packet.getPort(), port)
   }
 
   test("setAddress") {
