@@ -27,18 +27,18 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
 
   fd = new FileDescriptor()
 
-  private val bindToDevice = false
-  private var ipaddress = Array[Byte](0, 0, 0, 0)
-  private var ttl = 1
-  @volatile private var isNativeConnected : Boolean = _
-  var receiveTimeout : Int = _
-  val streaming : Boolean = true
-  var shutdownInput : Boolean = _
-  private var connectedAddress : InetAddress = _
-  private var connectedPort = -1
-  private var trafficClass : Int = _
+  private val bindToDevice                         = false
+  private var ipaddress                            = Array[Byte](0, 0, 0, 0)
+  private var ttl                                  = 1
+  @volatile private var isNativeConnected: Boolean = _
+  var receiveTimeout: Int                          = _
+  val streaming: Boolean                           = true
+  var shutdownInput: Boolean                       = _
+  private var connectedAddress: InetAddress        = _
+  private var connectedPort                        = -1
+  private var trafficClass: Int                    = _
 
-  def this(fd : FileDescriptor, localPort : Int) = {
+  def this(fd: FileDescriptor, localPort: Int) = {
     this()
     this.fd = fd
     this.localPort = localPort
@@ -69,7 +69,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     portOpt.map(inet.ntohs(_).toInt)
   }
 
-  def bind(port : Int, addr : InetAddress) : Unit = {
+  def bind(port: Int, addr: InetAddress): Unit = {
     val hints = stackalloc[addrinfo]
     val ret   = stackalloc[Ptr[addrinfo]]
     string.memset(hints.cast[Ptr[Byte]], 0, sizeof[addrinfo])
@@ -93,7 +93,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     if (bindRes < 0) {
       throw new BindException(
         "Couldn't bind to an address: " + addr.getHostAddress +
-        " on port: " + port.toString)
+          " on port: " + port.toString)
     }
 
     localPort = fetchLocalPort(family).getOrElse {
@@ -103,59 +103,61 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     try {
       setOption(SocketOptions.SO_BROADCAST, Boolean.box(true))
     } catch {
-      case e : IOException =>
+      case e: IOException =>
     }
   }
 
-  def close() : Unit = fd.synchronized {
+  def close(): Unit = fd.synchronized {
     if (fd.valid()) {
       try {
         cClose(fd.fd)
       } catch {
-        case e : IOException =>
+        case e: IOException =>
       }
       fd = new FileDescriptor()
     }
   }
 
-  def create() : Unit = {
+  def create(): Unit = {
     var sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
     if (sock < 0) {
-      sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0); 
+      sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0);
     }
-    if (sock < 0){
+    if (sock < 0) {
       throw new IOException("Couldn't create a socket")
     }
     fd = new FileDescriptor(sock)
   }
 
-  override def finalize() : Unit = close()
+  override def finalize(): Unit = close()
 
-  private def getSocketOption(anOption : Int) : Object = {
+  private def getSocketOption(anOption: Int): Object = {
     if (!fd.valid()) {
       throw new SocketException("Bad socket.")
     }
 
     val level = anOption match {
       case SocketOptions.IP_TOS | IP_MULTICAST_TTL |
-           SocketOptions.IP_MULTICAST_IF | SocketOptions.IP_MULTICAST_LOOP => in.IPPROTO_IP
+          SocketOptions.IP_MULTICAST_IF | SocketOptions.IP_MULTICAST_LOOP =>
+        in.IPPROTO_IP
       case SocketOptions.IP_MULTICAST_IF2 => in.IPPROTO_IPV6
-      case SocketOptions.TCP_NODELAY => in.IPPROTO_TCP
-      case _ => socket.SOL_SOCKET
+      case SocketOptions.TCP_NODELAY      => in.IPPROTO_TCP
+      case _                              => socket.SOL_SOCKET
     }
     val optValue = nativeValueFromOption(anOption)
 
     val opt = anOption match {
       case SocketOptions.SO_LINGER => stackalloc[socket.linger].cast[Ptr[Byte]]
-      case SocketOptions.IP_MULTICAST_IF => stackalloc[in.sockaddr_in].cast[Ptr[Byte]]
+      case SocketOptions.IP_MULTICAST_IF =>
+        stackalloc[in.sockaddr_in].cast[Ptr[Byte]]
       case _ => stackalloc[CInt].cast[Ptr[Byte]]
     }
 
     val len = stackalloc[socket.socklen_t]
     !len = anOption match {
-      case SocketOptions.SO_LINGER => sizeof[socket.linger].toUInt
+      case SocketOptions.SO_LINGER       => sizeof[socket.linger].toUInt
       case SocketOptions.IP_MULTICAST_IF => sizeof[in.sockaddr_in].toUInt
-      case _ => sizeof[CInt].toUInt
+      case _                             => sizeof[CInt].toUInt
     }
 
     val result = socket.getsockopt(fd.fd, level, optValue, opt, len)
@@ -193,14 +195,14 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
         }
       }
       case SocketOptions.SO_BROADCAST | SocketOptions.SO_REUSEADDR |
-           SocketOptions.SO_KEEPALIVE | SocketOptions.SO_OOBINLINE |
-           SocketOptions.IP_MULTICAST_LOOP =>
+          SocketOptions.SO_KEEPALIVE | SocketOptions.SO_OOBINLINE |
+          SocketOptions.IP_MULTICAST_LOOP =>
         Boolean.box(!(opt.cast[Ptr[CInt]]) != 0)
       case _ =>
         Integer.valueOf(!(opt.cast[Ptr[CInt]]))
     }
   }
-  
+
   private def nativeValueFromOption(option: Int) = option match {
     case SocketOptions.IP_TOS            => in.IP_TOS
     case SocketOptions.SO_KEEPALIVE      => socket.SO_KEEPALIVE
@@ -219,53 +221,53 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     case IP_MULTICAST_ADD                => in.IP_ADD_MEMBERSHIP
     case IP_MULTICAST_DROP               => in.IP_DROP_MEMBERSHIP
     case _                               => sys.error(s"Unknown option: $option")
-}
+  }
 
-  def getOption(optID : Int) : Object = optID match {
+  def getOption(optID: Int): Object = optID match {
     case SocketOptions.SO_TIMEOUT => Int.box(receiveTimeout)
-    case SocketOptions.IP_TOS => Int.box(trafficClass)
+    case SocketOptions.IP_TOS     => Int.box(trafficClass)
     case _ => {
-      val result : Object = getSocketOption(optID)
+      val result: Object = getSocketOption(optID)
       if (optID == SocketOptions.IP_MULTICAST_IF) {
         try {
           InetAddress.getByAddress(ipaddress)
         } catch {
-          case e : UnknownHostException => null
+          case e: UnknownHostException => null
         }
       }
       result
     }
   }
 
-  protected[net] def getTTL() : Byte = {
+  protected[net] def getTTL(): Byte = {
     Byte.box(getOption(IP_MULTICAST_TTL).asInstanceOf[Byte])
   }
 
-  def getTimeToLive() : Int = {
+  def getTimeToLive(): Int = {
     Byte.box(getOption(IP_MULTICAST_TTL).asInstanceOf[Byte]) & 0xFF
   }
 
-  def join(addr : InetAddress) : Unit =
+  def join(addr: InetAddress): Unit =
     setOption(IP_MULTICAST_ADD, addr)
 
-  def joinGroup(addr : SocketAddress, netInterface : NetworkInterface) : Unit = {
+  def joinGroup(addr: SocketAddress, netInterface: NetworkInterface): Unit = {
     if (addr.isInstanceOf[InetSocketAddress]) {
       val groupAddr = addr.asInstanceOf[InetSocketAddress].getAddress
       setOption(IP_MULTICAST_ADD, addr)
     }
   }
 
-  def leave(addr : InetAddress) : Unit =
+  def leave(addr: InetAddress): Unit =
     setOption(IP_MULTICAST_DROP, addr)
 
-  def leaveGroup(addr : SocketAddress, netInterface : NetworkInterface) : Unit = {
+  def leaveGroup(addr: SocketAddress, netInterface: NetworkInterface): Unit = {
     if (addr.isInstanceOf[InetSocketAddress]) {
       val groupAddr = addr.asInstanceOf[InetSocketAddress].getAddress
       setOption(IP_MULTICAST_DROP, addr)
     }
   }
 
-  private def selectRead(fd : FileDescriptor, timeout: Int) : Unit = {
+  private def selectRead(fd: FileDescriptor, timeout: Int): Unit = {
     if (timeout > 0) {
       val fdset = stackalloc[fd_set]
       !fdset._1 = stackalloc[CLongInt](FD_SETSIZE / (8 * sizeof[CLongInt]))
@@ -282,17 +284,19 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
           throw new SocketTimeoutException(
             "Accept timed out, "
               + "SO_TIMEOUT was set to: " + timeout)
-        case -1 => throw new SocketException(fromCString(string.strerror(errno.errno)))
-        case _  => {}
+        case -1 =>
+          throw new SocketException(fromCString(string.strerror(errno.errno)))
+        case _ => {}
       }
     }
   }
 
-  private def recvConnectedDatagram(packet : DatagramPacket, peek : Boolean) : Int = {
+  private def recvConnectedDatagram(packet: DatagramPacket,
+                                    peek: Boolean): Int = {
     val localCount = if (packet.length < 65536) packet.length else 65536
     Zone { implicit z =>
       val message = alloc[Byte](localCount)
-      var flags = 0
+      var flags   = 0
       if (!fd.valid()) {
         throw new SocketException("Bad Socket.")
       }
@@ -304,7 +308,8 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       val res = socket.recv(fd.fd, message, localCount, flags).toInt
 
       if (res < 0 || errno.errno == ECONNREFUSED) {
-        throw new PortUnreachableException(fromCString(string.strerror(errno.errno)))
+        throw new PortUnreachableException(
+          fromCString(string.strerror(errno.errno)))
       } else if (res < 0) {
         throw new SocketException(fromCString(string.strerror(errno.errno)))
       }
@@ -320,18 +325,19 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  private def getAddressFromBytes(family : UShort, sin : Ptr[socket.sockaddr]) : InetAddress = {
+  private def getAddressFromBytes(family: UShort,
+                                  sin: Ptr[socket.sockaddr]): InetAddress = {
     if (sin.sa_family == socket.AF_INET.toUShort) {
-      val addr4 = sin.cast[Ptr[in.sockaddr_in]]
-      val addr4in = addr4.sin_addr.in_addr
+      val addr4     = sin.cast[Ptr[in.sockaddr_in]]
+      val addr4in   = addr4.sin_addr.in_addr
       val addrBytes = Array.fill[Byte](4)(0)
       for (i <- 3 to 0 by -1) {
         addrBytes(i) = (addr4in >> i * 8).toByte
       }
       new Inet4Address(addrBytes)
     } else {
-      val addr6 = sin.cast[Ptr[in.sockaddr_in6]]
-      val addr6in = addr6.sin6_addr
+      val addr6     = sin.cast[Ptr[in.sockaddr_in6]]
+      val addr6in   = addr6.sin6_addr
       val addrBytes = Array.fill[Byte](16)(0)
       for (i <- 0 until 16) {
         addrBytes(i) = (!((addr6in._1)._1 + i)).toByte
@@ -340,13 +346,13 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  private def receiveDatagram(pack : DatagramPacket, peek : Boolean) : Int = {
+  private def receiveDatagram(pack: DatagramPacket, peek: Boolean): Int = {
     val len = stackalloc[socket.socklen_t]
     !len = sizeof[in.sockaddr_in6].toUInt
     val sin = stackalloc[socket.sockaddr]
 
     val localCount = if (pack.length < 65536) pack.length else 65536
-    val message = stackalloc[Byte](localCount)
+    val message    = stackalloc[Byte](localCount)
     if (!fd.valid()) {
       throw new SocketException("Bad Socket.")
     }
@@ -355,7 +361,8 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     if (peek) {
       flags = socket.MSG_PEEK
     }
-    val result = socket.recvfrom(fd.fd, message, localCount, flags, sin, len).toInt
+    val result =
+      socket.recvfrom(fd.fd, message, localCount, flags, sin, len).toInt
 
     pack.port = if (!sin._1 == socket.AF_INET.toUShort) {
       val addr4 = sin.cast[Ptr[in.sockaddr_in]]
@@ -376,10 +383,10 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     result.toInt
   }
 
-  protected[net] def peek(sender : InetAddress) : Int = {
+  protected[net] def peek(sender: InetAddress): Int = {
     if (isNativeConnected) {
       val storageArray = Array.fill[Byte](10)(0)
-      val pack = new DatagramPacket(storageArray, storageArray.size)
+      val pack         = new DatagramPacket(storageArray, storageArray.size)
 
       recvConnectedDatagram(pack, true)
 
@@ -398,7 +405,8 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
           throw new SocketException("Bad Socket.")
         }
         selectRead(fd, receiveTimeout)
-        val result = socket.recvfrom(fd.fd, message, 1, socket.MSG_PEEK, sin, len).toInt
+        val result =
+          socket.recvfrom(fd.fd, message, 1, socket.MSG_PEEK, sin, len).toInt
 
         if (result < 0) {
           throw new SocketException(fromCString(string.strerror(errno.errno)))
@@ -406,14 +414,14 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       }
 
       val port = if (!sin._1 != socket.AF_INET.toUShort) {
-        val addr4 = sin.cast[Ptr[in.sockaddr_in]]
+        val addr4   = sin.cast[Ptr[in.sockaddr_in]]
         val addr4in = addr4.sin_addr.in_addr
         for (i <- 3 to 0 by -1) {
           sender.ipAddress(i) = (addr4in >> i * 8).toByte
         }
         inet.ntohs(!addr4._2)
       } else {
-        val addr6 = sin.cast[Ptr[in.sockaddr_in6]]
+        val addr6   = sin.cast[Ptr[in.sockaddr_in6]]
         val addr6in = addr6.sin6_addr
         for (i <- 0 until 16) {
           sender.ipAddress(i) = (!((addr6in._1)._1 + i)).toByte
@@ -424,7 +432,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  def receive(pack : DatagramPacket) : Unit = {
+  def receive(pack: DatagramPacket): Unit = {
     try {
       if (isNativeConnected) {
         recvConnectedDatagram(pack, false)
@@ -433,12 +441,16 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
         receiveDatagram(pack, false)
       }
     } catch {
-      case e : InterruptedIOException =>
+      case e: InterruptedIOException =>
         throw new SocketTimeoutException(e.getMessage())
     }
   }
 
-  private def sendMsgConn(fd : FileDescriptor, msg : Ptr[Byte], sent : Int, length : Int, flags: Int) : Int = {
+  private def sendMsgConn(fd: FileDescriptor,
+                          msg: Ptr[Byte],
+                          sent: Int,
+                          length: Int,
+                          flags: Int): Int = {
     if (!fd.valid()) {
       if (sent == 0) {
         throw new SocketException("Bad Socket.")
@@ -451,7 +463,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       result
     } else {
       val newLength = length - result.toInt
-      val newSent = sent + result.toInt
+      val newSent   = sent + result.toInt
       if (newLength > 0)
         sendMsgConn(fd, msg, newSent, newLength, flags)
       else
@@ -459,14 +471,20 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  private def sendMsg(fd : FileDescriptor, msg : Ptr[Byte], sent : Int, length : Int, flags: Int,
-                      destAddr : Ptr[socket.sockaddr], addrlen : socket.socklen_t) : Int = {
-    val result = socket.sendto(fd.fd, (msg + sent), length, flags, destAddr, addrlen).toInt
+  private def sendMsg(fd: FileDescriptor,
+                      msg: Ptr[Byte],
+                      sent: Int,
+                      length: Int,
+                      flags: Int,
+                      destAddr: Ptr[socket.sockaddr],
+                      addrlen: socket.socklen_t): Int = {
+    val result =
+      socket.sendto(fd.fd, (msg + sent), length, flags, destAddr, addrlen).toInt
     if (result < 0) {
       result
     } else {
       val newLength = length - result.toInt
-      val newSent = sent + result.toInt
+      val newSent   = sent + result.toInt
       if (newLength > 0)
         sendMsg(fd, msg, newSent, newLength, flags, destAddr, addrlen).toInt
       else
@@ -474,34 +492,39 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  def getSockAddr(address : InetAddress, port: Int) : Ptr[socket.sockaddr] = address match {
-    case in4 : Inet4Address => {
-      val in4addr = stdlib.malloc(sizeof[in.sockaddr_in]).cast[Ptr[in.sockaddr_in]]
-      in4addr.sin_family = socket.AF_INET.toUShort
-      in4addr.sin_port = inet.htons(port.toUShort)
-      val in4addr_b = in4addr.sin_addr
-      in4addr_b.in_addr = 0.toUInt
-      for (i <- 0 until 4) {
-        in4addr_b.in_addr = in4addr_b.in_addr | (in4.ipAddress(i).toUByte << (i * 8))
+  def getSockAddr(address: InetAddress, port: Int): Ptr[socket.sockaddr] =
+    address match {
+      case in4: Inet4Address => {
+        val in4addr =
+          stdlib.malloc(sizeof[in.sockaddr_in]).cast[Ptr[in.sockaddr_in]]
+        in4addr.sin_family = socket.AF_INET.toUShort
+        in4addr.sin_port = inet.htons(port.toUShort)
+        val in4addr_b = in4addr.sin_addr
+        in4addr_b.in_addr = 0.toUInt
+        for (i <- 0 until 4) {
+          in4addr_b.in_addr = in4addr_b.in_addr | (in4
+            .ipAddress(i)
+            .toUByte << (i * 8))
+        }
+        in4addr.cast[Ptr[socket.sockaddr]]
       }
-      in4addr.cast[Ptr[socket.sockaddr]]
-    }
-    case in6 : Inet6Address => {
-      val in6addr = stdlib.malloc(sizeof[in.sockaddr_in6]).cast[Ptr[in.sockaddr_in6]]
-      in6addr.sin6_family = socket.AF_INET6.toUShort
-      in6addr.sin6_port = inet.htons(port.toUShort)
-      in6addr.sin6_flowinfo = ((trafficClass & 0xFF) << 20).toUShort
-      val in6addr_b = in6addr.sin6_addr
-      for (i <- 0 until 16) {
-        !(in6addr_b._1._1 + i) = in6.ipAddress(i).toUByte
+      case in6: Inet6Address => {
+        val in6addr =
+          stdlib.malloc(sizeof[in.sockaddr_in6]).cast[Ptr[in.sockaddr_in6]]
+        in6addr.sin6_family = socket.AF_INET6.toUShort
+        in6addr.sin6_port = inet.htons(port.toUShort)
+        in6addr.sin6_flowinfo = ((trafficClass & 0xFF) << 20).toUShort
+        val in6addr_b = in6addr.sin6_addr
+        for (i <- 0 until 16) {
+          !(in6addr_b._1._1 + i) = in6.ipAddress(i).toUByte
+        }
+        in6addr.sin6_scope_id = 0.toUInt
+        in6addr.cast[Ptr[socket.sockaddr]]
       }
-      in6addr.sin6_scope_id = 0.toUInt
-      in6addr.cast[Ptr[socket.sockaddr]]
     }
-  }
 
-  def send(pack : DatagramPacket) : Unit = {
-    Zone { implicit z => 
+  def send(pack: DatagramPacket): Unit = {
+    Zone { implicit z =>
       val message = alloc[Byte](pack.length)
       for (i <- 0 until pack.length) {
         !(message + i) = pack.data(i)
@@ -510,20 +533,23 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
         val result = sendMsgConn(fd, message, 0, pack.length, 0)
 
         if (result < 0 || errno.errno == ECONNREFUSED) {
-          throw new PortUnreachableException(fromCString(string.strerror(errno.errno)))
+          throw new PortUnreachableException(
+            fromCString(string.strerror(errno.errno)))
         } else if (result < 0) {
           throw new SocketException(fromCString(string.strerror(errno.errno)))
         }
       } else {
-        val sockaddr : Ptr[socket.sockaddr] = getSockAddr(pack.address, pack.port)
+        val sockaddr: Ptr[socket.sockaddr] =
+          getSockAddr(pack.address, pack.port)
         val addrLen = pack.address match {
-          case in4 : Inet4Address => sizeof[in.sockaddr_in]
-          case in6 : Inet6Address => sizeof[in.sockaddr_in6]
+          case in4: Inet4Address => sizeof[in.sockaddr_in]
+          case in6: Inet6Address => sizeof[in.sockaddr_in6]
         }
         if (!fd.valid()) {
           throw new SocketException("Bad socket.")
         }
-        val result = sendMsg(fd, message, 0, pack.length, 0, sockaddr, addrLen.toUInt)
+        val result =
+          sendMsg(fd, message, 0, pack.length, 0, sockaddr, addrLen.toUInt)
         stdlib.free(sockaddr.cast[Ptr[Byte]])
 
         if (result < 0) {
@@ -534,32 +560,33 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  private def setSocketOption(anOption : Int, value : Object) : Unit = {
+  private def setSocketOption(anOption: Int, value: Object): Unit = {
     if (!fd.valid()) {
       throw new SocketException("Bad socket.")
     }
 
     val level = anOption match {
-      case SocketOptions.IP_TOS | IP_MULTICAST_ADD |
-           IP_MULTICAST_DROP | IP_MULTICAST_TTL |
-           SocketOptions.IP_MULTICAST_IF | SocketOptions.IP_MULTICAST_LOOP => in.IPPROTO_IP
+      case SocketOptions.IP_TOS | IP_MULTICAST_ADD | IP_MULTICAST_DROP |
+          IP_MULTICAST_TTL | SocketOptions.IP_MULTICAST_IF |
+          SocketOptions.IP_MULTICAST_LOOP =>
+        in.IPPROTO_IP
       case SocketOptions.IP_MULTICAST_IF2 => in.IPPROTO_IPV6
-      case SocketOptions.TCP_NODELAY => in.IPPROTO_TCP
-      case _                         => socket.SOL_SOCKET
+      case SocketOptions.TCP_NODELAY      => in.IPPROTO_TCP
+      case _                              => socket.SOL_SOCKET
     }
     val optValue = nativeValueFromOption(anOption)
 
-    val len : UInt = anOption match {
-      case SocketOptions.SO_LINGER => sizeof[socket.linger].toUInt
-      case SocketOptions.SO_TIMEOUT => sizeof[timeval].toUInt
-      case SocketOptions.IP_MULTICAST_IF => sizeof[in.sockaddr_in].toUInt
+    val len: UInt = anOption match {
+      case SocketOptions.SO_LINGER              => sizeof[socket.linger].toUInt
+      case SocketOptions.SO_TIMEOUT             => sizeof[timeval].toUInt
+      case SocketOptions.IP_MULTICAST_IF        => sizeof[in.sockaddr_in].toUInt
       case IP_MULTICAST_ADD | IP_MULTICAST_DROP => sizeof[in.ip_mreq].toUInt
-      case _ => sizeof[CInt].toUInt
+      case _                                    => sizeof[CInt].toUInt
     }
 
-    val opt : Ptr[Byte] = anOption match {
+    val opt: Ptr[Byte] = anOption match {
       case SocketOptions.SO_LINGER => {
-        val ptr = stackalloc[socket.linger]
+        val ptr    = stackalloc[socket.linger]
         val linger = value.asInstanceOf[Int]
 
         ptr.l_onoff = if (linger == -1) 0 else 1
@@ -585,19 +612,23 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
         }
       }
       case IP_MULTICAST_ADD => {
-        val ptr = stackalloc[in.ip_mreq]
+        val ptr  = stackalloc[in.ip_mreq]
         val addr = value.asInstanceOf[Inet4Address]
         for (i <- 0 until 4) {
-          ptr.imr_multiaddr.in_addr = ptr.imr_multiaddr.in_addr | (addr.ipAddress(i).toUByte << (i * 8))
+          ptr.imr_multiaddr.in_addr = ptr.imr_multiaddr.in_addr | (addr
+            .ipAddress(i)
+            .toUByte << (i * 8))
         }
         ptr.imr_interface.in_addr = 0.toUInt
         ptr.cast[Ptr[Byte]]
       }
       case IP_MULTICAST_DROP => {
-        val ptr = stackalloc[in.ip_mreq]
+        val ptr  = stackalloc[in.ip_mreq]
         val addr = value.asInstanceOf[Inet4Address]
         for (i <- 0 until 4) {
-          ptr.imr_multiaddr.in_addr = ptr.imr_multiaddr.in_addr | (addr.ipAddress(i).toUByte << (i * 8))
+          ptr.imr_multiaddr.in_addr = ptr.imr_multiaddr.in_addr | (addr
+            .ipAddress(i)
+            .toUByte << (i * 8))
         }
         ptr.imr_interface.in_addr = 0.toUInt
         ptr.cast[Ptr[Byte]]
@@ -608,14 +639,16 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
         ptr.sin_port = 0.toUShort
         val addr = value.asInstanceOf[Inet4Address]
         for (i <- 0 until 4) {
-          ptr.sin_addr.in_addr = ptr.sin_addr.in_addr | (addr.ipAddress(i).toUByte << (i * 8))
+          ptr.sin_addr.in_addr = ptr.sin_addr.in_addr | (addr
+            .ipAddress(i)
+            .toUByte << (i * 8))
         }
         ptr.cast[Ptr[Byte]]
       }
 
       case SocketOptions.SO_BROADCAST | SocketOptions.SO_REUSEADDR |
-           SocketOptions.SO_KEEPALIVE | SocketOptions.SO_OOBINLINE |
-           SocketOptions.IP_MULTICAST_LOOP=> {
+          SocketOptions.SO_KEEPALIVE | SocketOptions.SO_OOBINLINE |
+          SocketOptions.IP_MULTICAST_LOOP => {
         val ptr = stackalloc[CInt]
         !ptr = if (value.asInstanceOf[Boolean]) 1 else 0
         ptr.cast[Ptr[Byte]]
@@ -633,7 +666,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  def setOption(optionID : Int, value : Object) : Unit = {
+  def setOption(optionID: Int, value: Object): Unit = {
     var optID = optionID
 
     if (optID == SocketOptions.SO_TIMEOUT) {
@@ -642,21 +675,22 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       try {
         setSocketOption(optID, value)
       } catch {
-        case e : SocketException =>
+        case e: SocketException =>
           if (optID != SocketOptions.IP_TOS) {
             throw e
           }
       }
       if (optID == SocketOptions.IP_MULTICAST_IF) {
         val inet = value.asInstanceOf[InetAddress]
-        if (InetAddress.bytesToInt(inet.getAddress(), 0) == 0 || inet.isLoopbackAddress()){
+        if (InetAddress.bytesToInt(inet.getAddress(), 0) == 0 || inet
+              .isLoopbackAddress()) {
           ipaddress = value.asInstanceOf[InetAddress].getAddress()
         } else {
-          var local : InetAddress = null
+          var local: InetAddress = null
           try {
             local = InetAddress.getLocalHost()
           } catch {
-            case e : UnknownHostException =>
+            case e: UnknownHostException =>
               throw new SocketException("getLocalHost():" + e.toString())
           }
           if (inet == local)
@@ -671,24 +705,24 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
   }
 
-  protected[net] def setTimeToLive(ttl : Int) : Unit = {
+  protected[net] def setTimeToLive(ttl: Int): Unit = {
     setOption(IP_MULTICAST_TTL, Byte.box((ttl & 0xFF).asInstanceOf[Byte]))
     this.ttl = ttl
   }
 
-  protected[net] def setTTL(ttl : Byte) : Unit = {
+  protected[net] def setTTL(ttl: Byte): Unit = {
     setOption(IP_MULTICAST_TTL, Byte.box(ttl))
     this.ttl = ttl
   }
 
-  override def connect(inetAddr : InetAddress, port : Int) : Unit = {
+  override def connect(inetAddr: InetAddress, port: Int): Unit = {
     if (!fd.valid()) {
       throw new SocketException("Bad Socket.")
     }
     val sockAddr = getSockAddr(inetAddr, port)
     val addrLen = inetAddr match {
-      case in4 : Inet4Address => sizeof[in.sockaddr_in].toUInt
-      case in6 : Inet6Address => sizeof[in.sockaddr_in].toUInt
+      case in4: Inet4Address => sizeof[in.sockaddr_in].toUInt
+      case in6: Inet6Address => sizeof[in.sockaddr_in].toUInt
     }
     val result = socket.connect(fd.fd, sockAddr, addrLen)
     if (result != 0) {
@@ -699,7 +733,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     try {
       connectedAddress = InetAddress.getByAddress(inetAddr.getAddress)
     } catch {
-      case e : UnknownHostException =>
+      case e: UnknownHostException =>
         val hostName = inetAddr.getHostName()
         throw new SocketException(s"Host is unresolved\: $hostName")
     }
@@ -707,7 +741,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
     isNativeConnected = true
   }
 
-  override def disconnect() : Unit = {
+  override def disconnect(): Unit = {
     try {
       if (!fd.valid()) {
         throw new SocketException("Bad Socket.")
@@ -715,19 +749,19 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
       val sockAddr = stackalloc[socket.sockaddr]
       !sockAddr._1 = socket.AF_UNSPEC.toUShort
       val addrLen = sizeof[in.sockaddr_in].toUInt
-      val result = socket.connect(fd.fd, sockAddr, addrLen)
+      val result  = socket.connect(fd.fd, sockAddr, addrLen)
       if (result != 0) {
         throw new SocketException(fromCString(string.strerror(errno.errno)))
       }
     } catch {
-      case e : Exception => // eat exception
+      case e: Exception => // eat exception
     }
     connectedPort = -1
     connectedAddress = null
     isNativeConnected = false
   }
 
-  def peekData(pack : DatagramPacket) : Int = {
+  def peekData(pack: DatagramPacket): Int = {
     try {
       if (isNativeConnected) {
         recvConnectedDatagram(pack, true)
@@ -736,29 +770,29 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
         receiveDatagram(pack, true)
       }
     } catch {
-      case e : InterruptedIOException =>
+      case e: InterruptedIOException =>
         throw new SocketTimeoutException(e.getMessage())
     }
     pack.getPort()
   }
-  
-  private def updatePacketRcvAddress(packet : DatagramPacket) : Unit = {
+
+  private def updatePacketRcvAddress(packet: DatagramPacket): Unit = {
     packet.setAddress(connectedAddress)
     packet.setPort(connectedPort)
   }
 }
 
 object PlainDatagramSocketImpl {
-  private[net] final val MULTICAST_IF = 1
-  private[net] final val MULTICAST_TTL = 2
-  private[net] final val TCP_NODELAY = 4
-  private[net] final val FLAG_SHUTDOWN = 8
-  private[net] final val IP_MULTICAST_ADD = 19
+  private[net] final val MULTICAST_IF      = 1
+  private[net] final val MULTICAST_TTL     = 2
+  private[net] final val TCP_NODELAY       = 4
+  private[net] final val FLAG_SHUTDOWN     = 8
+  private[net] final val IP_MULTICAST_ADD  = 19
   private[net] final val IP_MULTICAST_DROP = 20
-  private[net] final val IP_MULTICAST_TTL = 17
+  private[net] final val IP_MULTICAST_TTL  = 17
 
-  private final val BROKEN_MULTICAST_IF = 1
-  private final val BROKEN_MULTICAST_TTL = 2
-  private final val BROKEN_TCP_NODELAY = 4
+  private final val BROKEN_MULTICAST_IF       = 1
+  private final val BROKEN_MULTICAST_TTL      = 2
+  private final val BROKEN_TCP_NODELAY        = 4
   private final val BROKEN_SO_LINGER_SHUTDOWN = 8
 }

@@ -12,14 +12,14 @@ object ioctl {
   def FIONREAD: CLongInt = extern
 
   @name("scalanative_SIOCGIFCONF")
-  def SIOCGIFCONF : CLongInt = extern
+  def SIOCGIFCONF: CLongInt = extern
 
   @name("scalanative_SIOCGIFFLAGS")
-  def SIOCGIFFLAGS : CLongInt = extern
+  def SIOCGIFFLAGS: CLongInt = extern
 
   @name("scalanative_SIOCGIFHWADDR")
-  def SIOCGIFHWADDR : CLongInt = extern
+  def SIOCGIFHWADDR: CLongInt = extern
 
   @name("scalanative_SIOCGIFMTU")
-  def SIOCGIFMTU : CLongInt = extern
+  def SIOCGIFMTU: CLongInt = extern
 }

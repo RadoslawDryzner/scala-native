@@ -3,17 +3,17 @@ package java.net
 import collection.JavaConverters._
 
 object InterfaceAddressSuite extends tests.Suite {
-  private var interfaceAddr : InterfaceAddress = null
-  private var anotherInterfaceAddr : InterfaceAddress = null
+  private var interfaceAddr: InterfaceAddress        = null
+  private var anotherInterfaceAddr: InterfaceAddress = null
 
   override def test(name: String)(body: => Unit): Unit =
     super.test(name) {
       setUp()
       try {
         body
-        } finally {
-          tearDown()
-        }
+      } finally {
+        tearDown()
+      }
     }
 
   override def testFails(name: String, issue: Int)(body: => Unit): Unit =
@@ -21,14 +21,16 @@ object InterfaceAddressSuite extends tests.Suite {
       setUp()
       try {
         body
-        } finally {
-          tearDown()
-        }
+      } finally {
+        tearDown()
+      }
     }
 
-  protected def setUp() : Unit = {
-    interfaceAddr = NetworkInterface.getNetworkInterfaces().asScala.find(netif =>
-        netif.getInterfaceAddresses().size != 0) match {
+  protected def setUp(): Unit = {
+    interfaceAddr = NetworkInterface
+      .getNetworkInterfaces()
+      .asScala
+      .find(netif => netif.getInterfaceAddresses().size != 0) match {
       case Some(netIf) => {
         netIf.getInterfaceAddresses().get(0)
       }
@@ -36,15 +38,17 @@ object InterfaceAddressSuite extends tests.Suite {
     }
 
     if (interfaceAddr != null) {
-      anotherInterfaceAddr = NetworkInterface.getNetworkInterfaces().asScala.find(netif =>
-          netif.getInterfaceAddresses().size != 0) match {
-            case Some(netIf) => netIf.getInterfaceAddresses().get(0)
-            case None => null
-          }
+      anotherInterfaceAddr = NetworkInterface
+        .getNetworkInterfaces()
+        .asScala
+        .find(netif => netif.getInterfaceAddresses().size != 0) match {
+        case Some(netIf) => netIf.getInterfaceAddresses().get(0)
+        case None        => null
+      }
     }
   }
 
-  protected def tearDown() : Unit = {
+  protected def tearDown(): Unit = {
     interfaceAddr = null
     anotherInterfaceAddr = null
   }
@@ -88,13 +92,13 @@ object InterfaceAddressSuite extends tests.Suite {
 
   test("getBroadcast") {
     if (interfaceAddr != null) {
-      val addr = interfaceAddr.getAddress()
+      val addr  = interfaceAddr.getAddress()
       val addr1 = interfaceAddr.getBroadcast()
       val addr2 = anotherInterfaceAddr.getBroadcast()
 
       addr match {
-        case addr4 : Inet4Address => assert(addr2 == addr1)
-        case addr6 : Inet6Address => assert(addr1 == null && addr2 == null)
+        case addr4: Inet4Address => assert(addr2 == addr1)
+        case addr6: Inet6Address => assert(addr1 == null && addr2 == null)
       }
     }
   }
