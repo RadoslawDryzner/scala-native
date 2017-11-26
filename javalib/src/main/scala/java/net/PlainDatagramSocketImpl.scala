@@ -123,9 +123,6 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
   def create(): Unit = {
     var sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
     if (sock < 0) {
-      sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0);
-    }
-    if (sock < 0) {
       throw new IOException("Couldn't create a socket")
     }
     fd = new FileDescriptor(sock)
@@ -785,10 +782,6 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl {
 }
 
 object PlainDatagramSocketImpl {
-  private[net] final val MULTICAST_IF      = 1
-  private[net] final val MULTICAST_TTL     = 2
-  private[net] final val TCP_NODELAY       = 4
-  private[net] final val FLAG_SHUTDOWN     = 8
   private[net] final val IP_MULTICAST_ADD  = 19
   private[net] final val IP_MULTICAST_DROP = 20
   private[net] final val IP_MULTICAST_TTL  = 17
@@ -796,5 +789,4 @@ object PlainDatagramSocketImpl {
   private final val BROKEN_MULTICAST_IF       = 1
   private final val BROKEN_MULTICAST_TTL      = 2
   private final val BROKEN_TCP_NODELAY        = 4
-  private final val BROKEN_SO_LINGER_SHUTDOWN = 8
 }
