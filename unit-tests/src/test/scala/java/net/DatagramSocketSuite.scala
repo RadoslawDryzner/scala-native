@@ -7,13 +7,6 @@ import java.util.Date
 // Ported from Apache Harmony
 
 object DatagramSocketSuite extends tests.Suite {
-  val ds: DatagramSocket   = null
-  val dp: DatagramPacket   = null
-  val sds: DatagramSocket  = null
-  var retval: String       = null
-  val testString: String   = "Test String"
-  val interrupted: Boolean = false
-
   test("constructor") {
     new DatagramSocket()
   }
@@ -100,8 +93,6 @@ object DatagramSocketSuite extends tests.Suite {
     assertEquals(-1, ds.getPort())
   }
 
-  test("getInetAddress") {}
-
   test("getLocalAddress") {
     val local: InetAddress = InetAddress.getLocalHost()
     val portNumber         = 0
@@ -169,7 +160,7 @@ object DatagramSocketSuite extends tests.Suite {
     }
     assert(interrupted)
     val delay = (new Date().getTime() - start.getTime()).toInt
-    //assert(delay >= 490)
+    assert(delay >= 490)
   }
 
   test("receive oversize DatagramPacket") {
